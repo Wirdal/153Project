@@ -11,11 +11,14 @@ import {
 	KeyboardAvoidingView,
 } from 'react-native';
 import { Input, Button, Icon } from 'react-native-elements';
+import firebase from '../config';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 const BG_IMAGE = require('../assets/images/backgroundLogin.jpg');
+
+const db = firebase.firestore();
 
 // Enable LayoutAnimation on Android
 UIManager.setLayoutAnimationEnabledExperimental &&
@@ -48,12 +51,14 @@ export default class LoginScreen extends Component {
 
 		this.state = {
 			email: '',
+			isEmailValid: true,
 			password: '',
+			isPasswordValid: true,
+			passwordConfirmation: '',
+			isConfirmationValid: true,
 			selectedCategory: 0,
 			isLoading: false,
-			isEmailValid: true,
-			isPasswordValid: true,
-			isConfirmationValid: true,
+			errorMessage: null,
 		};
 
 		this.selectCategory = this.selectCategory.bind(this);
@@ -69,7 +74,7 @@ export default class LoginScreen extends Component {
 		});
 	}
 
-	validateEmail(email) {
+	verifyEmail(email) {
 		var re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
 		return re.test(email);
@@ -83,26 +88,87 @@ export default class LoginScreen extends Component {
 			LayoutAnimation.easeInEaseOut();
 			this.setState({
 				isLoading: false,
-				isEmailValid: this.validateEmail(email) || this.emailInput.shake(),
+				isEmailValid: this.verifyEmail(email) || this.emailInput.shake(),
 				isPasswordValid: password.length >= 8 || this.passwordInput.shake(),
 			});
 		}, 1500);
 	}
 
 	signUp() {
-		const { email, password, passwordConfirmation } = this.state;
+		const { email, password } = this.state;
 		this.setState({ isLoading: true });
 		// Simulate an API call
-		setTimeout(() => {
-			LayoutAnimation.easeInEaseOut();
-			this.setState({
-				isLoading: false,
-				isEmailValid: this.validateEmail(email) || this.emailInput.shake(),
-				isPasswordValid: password.length >= 8 || this.passwordInput.shake(),
-				isConfirmationValid:
-				password === passwordConfirmation || this.confirmationInput.shake(),
+		// setTimeout(() => {
+		// 	LayoutAnimation.easeInEaseOut();
+		// 	this.setState({
+		// 		isLoading: false,
+		// 		isEmailValid: this.validateEmail(email) || this.emailInput.shake(),
+		// 		isPasswordValid: password.length >= 8 || this.passwordInput.shake(),
+		// 		isConfirmationValid:
+		// 		password === passwordConfirmation || this.confirmationInput.shake(),
+		// });
+		// }, 1500);
+
+		if (!this.validatePassword() && this.validateEmail()) {
+			return;
+		}
+
+		const usersRef = db.collection('users');
+		const { navigation } = this.props;
+
+		usersRef.where('email', '==', email).get()
+			.then((querySnapshot) => {
+				if (querySnapshot.size > 0) {
+					this.setState({ errorMessage: 'A user with this email already exists.' });
+					return;
+				}
+
+				firebase.auth()
+					.createUserWithEmailAndPassword(email, password)
+					.then(({ user }) => {
+						usersRef.doc(user.uid).set({
+							email,
+						}).then(() => {
+							navigation.goBack();
+						}).catch((error) => {
+							this.setState({ errorMessage: error.message });
+						});
+					}).catch(error => this.setState({ errorMessage: error.message }));
 			});
-		}, 1500);
+	}
+
+	validatePassword() {
+		const { password, passwordConfirmation } = this.state;
+
+		const valid = password.length > 0;
+		this.setState({ passwordValid: valid });
+
+		if (!valid) {
+			this.passwordInput.shake();
+			return false;
+		}
+
+		const validConfirmation = password === passwordConfirmation;
+		this.setState({ isConfirmationValid: validConfirmation });
+
+		if (!validConfirmation) {
+			this.passwordConfirmationInput.shake();
+		}
+
+		return validConfirmation;
+	}
+
+	validateEmail() {
+		const { email } = this.state;
+
+		const valid = this.verifyEmail(email);
+		this.setState({ isEmailValid: valid });
+
+		if (!valid) {
+			this.emailInput.shake();
+		}
+
+		return valid;
 	}
 
 	render() {
@@ -188,7 +254,10 @@ export default class LoginScreen extends Component {
 										borderBottomColor: 'rgba(0, 0, 0, 0.38)',
 									}}
 									ref={input => (this.emailInput = input)}
-									onSubmitEditing={() => this.passwordInput.focus()}
+									onSubmitEditing={() => {
+										this.validateEmail();
+										this.passwordInput.focus();
+									}}
 									onChangeText={email => this.setState({ email })}
 									errorMessage={
 										isEmailValid ? null : 'Please enter a valid email address'
@@ -219,9 +288,9 @@ export default class LoginScreen extends Component {
 									placeholder={'Password'}
 									ref={input => (this.passwordInput = input)}
 									onSubmitEditing={() =>
-											isSignUpPage
-												? this.confirmationInput.focus()
-												: this.login()
+										isSignUpPage
+											? this.confirmationInput.focus()
+											: this.login()
 									}
 									onChangeText={password => this.setState({ password })}
 									errorMessage={
@@ -258,7 +327,7 @@ export default class LoginScreen extends Component {
 										ref={input => (this.confirmationInput = input)}
 										onSubmitEditing={this.signUp}
 										onChangeText={passwordConfirmation =>
-												this.setState({ passwordConfirmation })
+											this.setState({ passwordConfirmation })
 										}
 										errorMessage={
 											isConfirmationValid
@@ -285,7 +354,7 @@ export default class LoginScreen extends Component {
 							</View>
 						</KeyboardAvoidingView>
 					</View>
-			</ImageBackground>
+				</ImageBackground>
 			</View>
 		);
 	}
