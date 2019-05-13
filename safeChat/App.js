@@ -47,6 +47,6 @@ export default class App extends Component {
       );
     }
 
-    return <Text>Loading...</Text>;
+    return <View />;
   }
 }

@@ -6,12 +6,41 @@ import {
   StyleSheet,
   Text,
   View,
+  Button,
 } from 'react-native';
+import firebase from '../config';
+import { StackActions, NavigationActions } from 'react-navigation';
 
 export default class HomeScreen extends React.Component {
-  static navigationOptions = {
-    header: null,
-  };
+  static handleLogout = ({ navigation }) => {
+    firebase.auth().signOut().then(() => {
+      const resetAction = StackActions.reset({
+        index: 0,
+        actions: [NavigationActions.navigate({ routeName: 'Login' })],
+      });
+      navigation.dispatch(resetAction);
+    });
+  }
+
+  static navigationOptions = props => ({
+    title: 'SafeChat',
+    headerTintColor: '#cccccc',
+    headerStyle: {
+      backgroundColor: '#cccccc',
+    },
+    headerTitleStyle: {
+      color: 'white',
+    },
+    headerRight: (
+      <Button
+        title="Logout"
+        onPress={() => HomeScreen.handleLogout(props)}
+        type="clear"
+        titleStyle={{ color: '#444444' }}
+      />
+    ),
+  })
+
 
   render() {
     return (

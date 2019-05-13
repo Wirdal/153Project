@@ -60,10 +60,6 @@ export default class LoginScreen extends Component {
 			isLoading: false,
 			errorMessage: null,
 		};
-
-		this.selectCategory = this.selectCategory.bind(this);
-		this.login = this.login.bind(this);
-		this.signUp = this.signUp.bind(this);
 	}
 
 	selectCategory(selectedCategory) {
@@ -82,34 +78,25 @@ export default class LoginScreen extends Component {
 
 	login() {
 		const { email, password } = this.state;
+    const { navigation } = this.props;
 		this.setState({ isLoading: true });
-		// Simulate an API call
-		setTimeout(() => {
-			LayoutAnimation.easeInEaseOut();
-			this.setState({
-				isLoading: false,
-				isEmailValid: this.verifyEmail(email) || this.emailInput.shake(),
-				isPasswordValid: password.length >= 8 || this.passwordInput.shake(),
-			});
-		}, 1500);
+
+    firebase.auth()
+      .signInWithEmailAndPassword(email, password)
+      .then(() => {
+        navigation.goBack();
+      }).catch((error) => {
+        this.setState({ errorMessage: error.message });
+				this.setState({ isLoading: false });
+      });
 	}
 
 	signUp() {
 		const { email, password } = this.state;
 		this.setState({ isLoading: true });
-		// Simulate an API call
-		// setTimeout(() => {
-		// 	LayoutAnimation.easeInEaseOut();
-		// 	this.setState({
-		// 		isLoading: false,
-		// 		isEmailValid: this.validateEmail(email) || this.emailInput.shake(),
-		// 		isPasswordValid: password.length >= 8 || this.passwordInput.shake(),
-		// 		isConfirmationValid:
-		// 		password === passwordConfirmation || this.confirmationInput.shake(),
-		// });
-		// }, 1500);
 
-		if (!this.validatePassword() && this.validateEmail()) {
+		if (!(this.validatePassword() && this.validateEmail())) {
+			this.setState({ isLoading: false });
 			return;
 		}
 
@@ -120,6 +107,7 @@ export default class LoginScreen extends Component {
 			.then((querySnapshot) => {
 				if (querySnapshot.size > 0) {
 					this.setState({ errorMessage: 'A user with this email already exists.' });
+					this.setState({ isLoading: false });
 					return;
 				}
 
@@ -132,6 +120,7 @@ export default class LoginScreen extends Component {
 							navigation.goBack();
 						}).catch((error) => {
 							this.setState({ errorMessage: error.message });
+							this.setState({ isLoading: false });
 						});
 					}).catch(error => this.setState({ errorMessage: error.message }));
 			});
@@ -141,7 +130,7 @@ export default class LoginScreen extends Component {
 		const { password, passwordConfirmation } = this.state;
 
 		const valid = password.length > 0;
-		this.setState({ passwordValid: valid });
+		this.setState({ isPasswordValid: valid });
 
 		if (!valid) {
 			this.passwordInput.shake();
@@ -152,7 +141,7 @@ export default class LoginScreen extends Component {
 		this.setState({ isConfirmationValid: validConfirmation });
 
 		if (!validConfirmation) {
-			this.passwordConfirmationInput.shake();
+			this.confirmationInput.shake();
 		}
 
 		return validConfirmation;
@@ -181,6 +170,7 @@ export default class LoginScreen extends Component {
 			email,
 			password,
 			passwordConfirmation,
+			errorMessage,
 		} = this.state;
 		const isLoginPage = selectedCategory === 0;
 		const isSignUpPage = selectedCategory === 1;
@@ -296,7 +286,7 @@ export default class LoginScreen extends Component {
 									errorMessage={
 										isPasswordValid
 											? null
-											: 'Please enter at least 8 characters'
+											: 'Please enter at least 6 characters'
 									}
 								/>
 								{isSignUpPage && (
@@ -325,7 +315,7 @@ export default class LoginScreen extends Component {
 										inputStyle={{ marginLeft: 10 }}
 										placeholder={'Confirm password'}
 										ref={input => (this.confirmationInput = input)}
-										onSubmitEditing={this.signUp}
+										onSubmitEditing={() => this.signUp()}
 										onChangeText={passwordConfirmation =>
 											this.setState({ passwordConfirmation })
 										}
@@ -336,6 +326,9 @@ export default class LoginScreen extends Component {
 										}
 									/>
 								)}
+                {errorMessage
+                  && <Text style={[styles.error]}>{errorMessage}</Text>
+                }
 								<Button
 									buttonStyle={styles.loginButton}
 									containerStyle={{ marginTop: 32, flex: 0 }}
@@ -346,10 +339,9 @@ export default class LoginScreen extends Component {
 									}}
 									activeOpacity={0.8}
 									title={isLoginPage ? 'LOGIN' : 'SIGN UP'}
-									onPress={isLoginPage ? this.login : this.signUp}
+									onPress={() => isLoginPage ? this.login() : this.signUp()}
 									titleStyle={styles.loginTextButton}
 									loading={isLoading}
-									disabled={isLoading}
 								/>
 							</View>
 						</KeyboardAvoidingView>
@@ -446,6 +438,12 @@ const styles = StyleSheet.create({
 		height: 64,
 		alignItems: 'center',
 		justifyContent: 'center',
+  },
+	error: {
+		fontFamily: 'regular',
+		color: 'red',
+		textAlign: 'center',
+		fontSize: 12,
 	},
 });
 
