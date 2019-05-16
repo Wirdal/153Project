@@ -6,8 +6,8 @@ import {
   StyleSheet,
   Text,
   View,
-  Button,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import firebase from '../config';
 import { StackActions, NavigationActions } from 'react-navigation';
 
@@ -23,24 +23,24 @@ export default class HomeScreen extends React.Component {
   }
 
   static navigationOptions = props => ({
-    title: 'SafeChat',
-    headerTintColor: '#cccccc',
-    headerStyle: {
-      backgroundColor: '#cccccc',
-    },
-    headerTitleStyle: {
-      color: 'white',
-    },
-    headerRight: (
-      <Button
-        title="Logout"
-        onPress={() => HomeScreen.handleLogout(props)}
-        type="clear"
-        titleStyle={{ color: '#444444' }}
-      />
-    ),
+    tabBarIcon: ({ tintColor }) => (<Icon name="home" size={24} color={tintColor} />),
+    title: 'Home',
+    // Saving code for later, may reuse it
+    // headerStyle: {
+    //   backgroundColor: '#4A4C56',
+    // },
+    // headerTitleStyle: { // title color
+    //   color: 'white',
+    // },
+    // headerRight: (
+    //   <Button
+    //     title="Logout"
+    //     onPress={() => HomeScreen.handleLogout(props)}
+    //     type="clear"
+    //     color='#FF7500'
+    //   />
+    // ),
   })
-
 
   render() {
     return (

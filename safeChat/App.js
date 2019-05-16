@@ -1,16 +1,20 @@
 import React, { Component } from 'react';
 import { createStackNavigator, createAppContainer } from 'react-navigation';
 import { Font } from 'expo';
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
 
 import LoginScreen from './screens/LoginScreen';
 import SplashScreen from './screens/SplashScreen';
 import HomeScreen from './screens/HomeScreen';
+import TabNavigator from './screens/TabNavigator';
+import SearchScreen from './screens/SearchScreen';
 
 const AppNavigator = createStackNavigator({
   Splash: { screen: SplashScreen },
   Login: { screen: LoginScreen },
+  Main: { screen: TabNavigator },
   Home: { screen: HomeScreen },
+  Search: { screen: SearchScreen },
 }, {
   headerLayoutPreset: 'center',
 });

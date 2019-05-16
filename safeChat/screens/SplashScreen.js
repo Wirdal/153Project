@@ -41,7 +41,7 @@ class SplashScreen extends Component {
       if (user) {
         actions.push(
           NavigationActions.navigate({
-            routeName: 'Home', key: user.uid, params: { userID: user.uid },
+            routeName: 'Main', key: user.uid, params: { userID: user.uid },
           }),
         );
       } else {
