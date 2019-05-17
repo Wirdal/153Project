@@ -33,7 +33,14 @@
 - **Chase**
 
  Help get Firebase and our application to pass messages. Look into alternatives for Virgil, if needed, based on the meeting.
+
 - **Kush**
+
+Create a simple nodejs website to sync with the app.
+
+Simulate automated attacks on the app using appium or otherwise tools. For the website too using casper and selenium.
+
+Add defenses to make sure messages are not automated and users cannot spam.
 
 ## Issues we had this week:
 
@@ -50,3 +57,5 @@
  Finding out **how** secure Virgil is. I am still not convinced that the easy solution is the best solution. I would have to hear from the meeting tomorrow.
 
 - **Kush**
+
+ How exactly to make the app draw variables such as typespeed and etc to obtain whether actions are by user or an automation script?
