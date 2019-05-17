@@ -6,9 +6,9 @@
 
 - **Kauana**
 
-   Worked on the login and sign up screen using React Native ([commit](https://github.com/Wirdal/153Project/commit/f685b375b3c9f04a3c3738242b13e8898af7ee2a)).
+ Worked on the login and sign up screen using React Native ([commit](https://github.com/Wirdal/153Project/commit/f685b375b3c9f04a3c3738242b13e8898af7ee2a)).
 
-   Set up Firebase so users can create an account and login once they have an account. We are currently storing only user's username (unique) so users can find one another ([commit1](https://github.com/Wirdal/153Project/commit/54eefaa8cb7f3a4f50dfdd7dbe50ed322d06bbd7)) and [commit2](https://github.com/Wirdal/153Project/commit/0f0b84f81d479ce6a849082f0a1e222de9c6be23)).
+ Set up Firebase so users can create an account and login once they have an account. We are currently storing only user's username (unique) so users can find one another ([commit1](https://github.com/Wirdal/153Project/commit/54eefaa8cb7f3a4f50dfdd7dbe50ed322d06bbd7)) and [commit2](https://github.com/Wirdal/153Project/commit/0f0b84f81d479ce6a849082f0a1e222de9c6be23)).
 
  Add screens flow by adding a bottom tab navigations with two tabs: home (which will be a list of chats opened) and search (which will allow users to search for each other and start a conversation ([commit](https://github.com/Wirdal/153Project/commit/ccdef4442345ab07349a98c03e8f3682560010c5)).
 
