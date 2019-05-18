@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { createStackNavigator, createAppContainer } from 'react-navigation';
 import { Font } from 'expo';
-import { View } from 'react-native';
+import { View, YellowBox } from 'react-native';
 
 import LoginScreen from './screens/LoginScreen';
 import SplashScreen from './screens/SplashScreen';
@@ -9,6 +9,7 @@ import HomeScreen from './screens/HomeScreen';
 import TabNavigator from './screens/TabNavigator';
 import SearchScreen from './screens/SearchScreen';
 
+YellowBox.ignoreWarnings(['Setting a timer']);
 const AppNavigator = createStackNavigator({
   Splash: { screen: SplashScreen },
   Login: { screen: LoginScreen },

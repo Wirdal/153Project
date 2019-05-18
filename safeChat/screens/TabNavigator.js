@@ -2,13 +2,15 @@ import React from 'react';
 import { createMaterialBottomTabNavigator } from 'react-navigation-material-bottom-tabs';
 import { Button } from 'react-native-elements';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { StackActions, NavigationActions } from 'react-navigation';
 
 import HomeScreen from './HomeScreen';
-import LinksScreen from './LinksScreen';
+import SearchScreen from './SearchScreen';
+import firebase from '../config';
 
 const TabNavigator = createMaterialBottomTabNavigator({
   Home: HomeScreen,
-  Search: LinksScreen,
+  Search: SearchScreen,
 }, {
   initialRouteName: 'Home',
   activeColor: '#FF7500',
@@ -17,8 +19,18 @@ const TabNavigator = createMaterialBottomTabNavigator({
   labeled: true,
 });
 
+const handleLogout = ({ navigation }) => {
+  firebase.auth().signOut().then(() => {
+    const resetAction = StackActions.reset({
+      index: 0,
+      actions: [NavigationActions.navigate({ routeName: 'Login' })],
+    });
+    navigation.dispatch(resetAction);
+  });
+}
+
 TabNavigator.navigationOptions = ({ navigation }) => ({
-  title: 'safeChat',
+  title: 'Safe Chat',
   headerLeft: null,
   headerTintColor: '#FF7500',
   headerStyle: {
@@ -31,7 +43,7 @@ TabNavigator.navigationOptions = ({ navigation }) => ({
   // log off for now, in the future navigate to settings screen
   headerRight: (
     <Button
-      onPress={() => HomeScreen.handleLogout(props)}
+      onPress={() => handleLogout({ navigation })}
       icon={(
         <Icon
           name="menu"

@@ -52,6 +52,8 @@ export default class LoginScreen extends Component {
     this.state = {
       email: '',
       isEmailValid: true,
+      username: '',
+      isUsernameValid: true,
       password: '',
       isPasswordValid: true,
       passwordConfirmation: '',
@@ -76,6 +78,17 @@ export default class LoginScreen extends Component {
     return re.test(email);
   }
 
+  verifyUsername(username) {
+    const valid = username.length > 0;
+    this.setState({ usernameValid: valid });
+
+    if (!valid) {
+      this.usernameInput.shake();
+    }
+
+    return valid;
+  }
+
   login() {
     const { email, password } = this.state;
     const { navigation } = this.props;
@@ -92,7 +105,7 @@ export default class LoginScreen extends Component {
   }
 
   signUp() {
-    const { email, password } = this.state;
+    const { username, email, password } = this.state;
     this.setState({ isLoading: true });
 
     if (!(this.validatePassword() && this.validateEmail())) {
@@ -103,26 +116,33 @@ export default class LoginScreen extends Component {
     const usersRef = db.collection('users');
     const { navigation } = this.props;
 
-    usersRef.where('email', '==', email).get()
+    usersRef.where('username', '==', username).get()
       .then((querySnapshot) => {
-	if (querySnapshot.size > 0) {
-	  this.setState({ errorMessage: 'A user with this email already exists.' });
-	  this.setState({ isLoading: false });
-	  return;
-	}
+        if (querySnapshot.size > 0) {
+	  this.setState({
+	    isLoading: false,
+	    errorMessage: 'A user with this username already exists.',
+	  });
+          return;
+        }
 
-	firebase.auth()
-	  .createUserWithEmailAndPassword(email, password)
-	  .then(({ user }) => {
-	    usersRef.doc(user.uid).set({
-	      email,
-	    }).then(() => {
-	      navigation.goBack();
-	    }).catch((error) => {
-	      this.setState({ errorMessage: error.message });
-	      this.setState({ isLoading: false });
-	    });
-	  }).catch(error => this.setState({ errorMessage: error.message }));
+        firebase.auth()
+          .createUserWithEmailAndPassword(email, password)
+          .then(({ user }) => {
+            usersRef.doc(user.uid).set({
+              username,
+            }).then(() => {
+              navigation.goBack();
+            }).catch((error) => {
+	      this.setState({
+		errorMessage: error.message,
+		isLoading: false,
+	      });
+            });
+	  }).catch(error => this.setState({
+	    errorMessage: error.message,
+	    isLoading: false,
+	  }));
       });
   }
 
@@ -147,6 +167,19 @@ export default class LoginScreen extends Component {
     return validConfirmation;
   }
 
+  validateUsername() {
+    const { username } = this.state;
+
+    const valid = this.verifyUsername(username);
+    this.setState({ isUsernameValid: valid });
+
+    if (!valid) {
+      this.usernameInput.shake();
+    }
+
+    return valid;
+  }
+
   validateEmail() {
     const { email } = this.state;
 
@@ -165,9 +198,11 @@ export default class LoginScreen extends Component {
       selectedCategory,
       isLoading,
       isEmailValid,
+      isUsernameValid,
       isPasswordValid,
       isConfirmationValid,
       email,
+      username,
       password,
       passwordConfirmation,
       errorMessage,
@@ -246,13 +281,51 @@ export default class LoginScreen extends Component {
 		  ref={input => (this.emailInput = input)}
 		  onSubmitEditing={() => {
 		    this.validateEmail();
-		    this.passwordInput.focus();
+		    if (isSignUpPage) {
+		      this.usernameInput.focus()
+		    } else {
+		      this.passwordInput.focus();
+		    }
 		  }}
 		  onChangeText={email => this.setState({ email })}
 		  errorMessage={
 		    isEmailValid ? null : 'Please enter a valid email address'
 		  }
 		/>
+		{isSignUpPage && (
+		<Input
+		  leftIcon={
+		    <Icon
+		      name="user"
+		      type="font-awesome"
+		      color="rgba(0, 0, 0, 0.38)"
+		      size={25}
+		      style={{ backgroundColor: 'transparent' }}
+		    />
+		  }
+		  value={username}
+		  keyboardAppearance="light"
+		  autoFocus={false}
+		  autoCapitalize="none"
+		  autoCorrect={false}
+		  returnKeyType="next"
+		  inputStyle={{ marginLeft: 10 }}
+		  placeholder={'Username'}
+		  containerStyle={{
+		    marginTop: 16,
+		    borderBottomColor: 'rgba(0, 0, 0, 0.38)',
+		  }}
+		  ref={input => (this.usernameInput = input)}
+		  onSubmitEditing={() => {
+		    this.validateUsername();
+		    this.passwordInput.focus();
+		  }}
+		  onChangeText={username => this.setState({ username })}
+		  errorMessage={
+		    isUsernameValid ? null : 'Please enter a valid username address'
+		  }
+		/>
+		)}
 		<Input
 		  leftIcon={
 		    <Icon
@@ -291,7 +364,7 @@ export default class LoginScreen extends Component {
 		/>
 		{isSignUpPage && (
 		  <Input
-		    icon={
+		    leftIcon={
 		      <Icon
 			name="lock"
 			type="simple-line-icon"
