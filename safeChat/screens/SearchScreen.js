@@ -47,6 +47,10 @@ const SearchResults = connectInfiniteHits(({
     }
   };
 
+  const openChatWith = (user) => {
+    navigation.push('Chat', { title: user.username, user });
+  }
+
   return (
     <FlatList
       data={hits}
@@ -57,6 +61,7 @@ const SearchResults = connectInfiniteHits(({
             leftElement={
               <UserAvatar name={item.username.slice(0, 2).toUpperCase()} size={50} />
             }
+            onPress={() => openChatWith({ userID: item.objectID, username: item.username })}
             title={item.username}
             chevron
           />

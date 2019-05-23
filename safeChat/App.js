@@ -8,6 +8,7 @@ import SplashScreen from './screens/SplashScreen';
 import HomeScreen from './screens/HomeScreen';
 import TabNavigator from './screens/TabNavigator';
 import SearchScreen from './screens/SearchScreen';
+import ChatScreen from './screens/ChatScreen';
 
 YellowBox.ignoreWarnings(['Setting a timer']);
 const AppNavigator = createStackNavigator({
@@ -16,6 +17,7 @@ const AppNavigator = createStackNavigator({
   Main: { screen: TabNavigator },
   Home: { screen: HomeScreen },
   Search: { screen: SearchScreen },
+  Chat: { screen: ChatScreen },
 }, {
   headerLayoutPreset: 'center',
 });
