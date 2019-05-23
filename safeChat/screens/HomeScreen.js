@@ -1,15 +1,18 @@
 import React from 'react';
 import {
-  Image,
   Platform,
   ScrollView,
   StyleSheet,
-  Text,
   View,
+  FlatList,
 } from 'react-native';
+import { ListItem } from 'react-native-elements';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import firebase from '../config';
 import { StackActions, NavigationActions } from 'react-navigation';
+import firebase from '../config';
+import UserAvatar from 'react-native-user-avatar';
+
+const db = firebase.firestore();
 
 export default class HomeScreen extends React.Component {
   static handleLogout = ({ navigation }) => {
@@ -25,45 +28,85 @@ export default class HomeScreen extends React.Component {
   static navigationOptions = props => ({
     tabBarIcon: ({ tintColor }) => (<Icon name="home" size={24} color={tintColor} />),
     title: 'Home',
-    // Saving code for later, may reuse it
-    // headerStyle: {
-    //   backgroundColor: '#4A4C56',
-    // },
-    // headerTitleStyle: { // title color
-    //   color: 'white',
-    // },
-    // headerRight: (
-    //   <Button
-    //     title="Logout"
-    //     onPress={() => HomeScreen.handleLogout(props)}
-    //     type="clear"
-    //     color='#FF7500'
-    //   />
-    // ),
   })
 
+  openChatWith(user) {
+    const { navigation } = this.props
+    navigation.push('Chat', { title: user.username, user });
+  }
+
+  constructor() {
+    super()
+
+    this.state = {
+      chats: [],
+    }
+
+    this.appUser = firebase.auth().currentUser.uid
+    this.appUserName = ''
+    db.collection('users').doc(this.appUser).get()
+      .then((userDoc) => {
+        this.appUserName = userDoc.data().username
+      })
+    this.chatsRef = db.collection('chats').doc(this.appUser)
+    this.unsubscribe = null
+  }
+
+  componentWillMount() {
+    this.unsubscribe = this.chatsRef.onSnapshot(this.onChatUpdate.bind(this));
+  }
+
+  componentWillUnmount() {
+    this.unsubscribe();
+  }
+
+  onChatUpdate(doc) {
+    if (!doc.data()) { return }
+
+    const chats = [];
+
+    let { active } = doc.data();
+    if (!active) { return }
+
+    active.forEach((chat) => {
+      if (!chat.timestamp) {
+        timestamp = Date.now()
+      } else {
+        timestamp = chat.timestamp
+      }
+
+      chats.push({
+        id: chat.id,
+        username: chat.username,
+        timestamp: timestamp,
+      });
+    })
+
+    const sortedChats = chats.sort((a, b) => (b.timestamp - a.timestamp));
+
+    this.setState({ chats: sortedChats });
+  }
+
   render() {
+    const { chats } = this.state
+
     return (
       <View style={styles.container}>
         <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-          <View style={styles.welcomeContainer}>
-            <Image
-              source={
-                __DEV__
-                  ? require('../assets/images/robot-dev.png')
-                  : require('../assets/images/robot-prod.png')
-              }
-              style={styles.welcomeImage}
-            />
-          </View>
-
-          <View style={styles.getStartedContainer}>
-
-            <Text style={styles.getStartedText}>Yay! This is the home page!</Text>
-
-            <View style={[styles.codeHighlightContainer, styles.homeScreenFilename]}>
-            </View>
-          </View>
+          <FlatList
+            data={chats}
+            keyExtractor={item => item.id}
+            renderItem={({ item }) =>
+                <ListItem
+                  leftElement={
+                    <UserAvatar name={item.username.slice(0, 2).toUpperCase()} size={50} />
+                  }
+                  onPress={() => this.openChatWith({ userID: item.id, username: item.username })}
+                  title={item.username}
+                  chevron
+                />
+            }
+          />
         </ScrollView>
       </View>
     );

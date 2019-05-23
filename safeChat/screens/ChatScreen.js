@@ -28,11 +28,17 @@ class ChatScreen extends React.Component {
 
     this.appUser = firebase.auth().currentUser.uid
     this.appUserName = ''
+    this.peerUserName = ''
     db.collection('users').doc(this.appUser).get()
       .then((userDoc) => {
         this.appUserName = userDoc.data().username
       })
-    this.participantsString = [this.appUser, navigation.state.params.user.userID].sort().join(',')
+    this.peerID = navigation.state.params.user.userID
+    db.collection('users').doc(this.peerID).get()
+      .then((userDoc) => {
+        this.peerUserName = userDoc.data().username
+      })
+    this.participantsString = [this.appUser, this.peerID].sort().join(',')
     this.messagesRef = db.collection('messages')
       .where('participants', '==', this.participantsString)
     this.unsubscribe = null
@@ -56,6 +62,46 @@ class ChatScreen extends React.Component {
       participants: this.participantsString,
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
     });
+
+    const leftRef = db.collection('chats').doc(this.appUser)
+    const leftChat = {
+      id: this.peerID,
+      username: this.peerUserName,
+      timestamp: Date.now(),
+    };
+    leftRef.get()
+      .then(docSnapshot => {
+        if (docSnapshot.exists) {
+          const current = docSnapshot.data().active
+          leftRef.update({
+            active: current.filter(({ id }) => id !== leftChat.id ).concat(leftChat),
+          });
+        } else {
+          leftRef.set({
+            active: [leftChat],
+          });
+        }
+      });
+
+    const rightRef = db.collection('chats').doc(this.peerID)
+    const rightChat = {
+      id: this.appUser,
+      username: this.appUserName,
+      timestamp: Date.now(),
+    };
+    rightRef.get()
+      .then(docSnapshot => {
+        if (docSnapshot.exists) {
+          const current = docSnapshot.data().active
+          rightRef.update({
+            active: current.filter(({ id }) => id !== rightChat.id ).concat(rightChat),
+          });
+        } else {
+          rightRef.set({
+            active: [rightChat],
+          });
+        }
+      });
   }
 
   componentWillUnmount() {
