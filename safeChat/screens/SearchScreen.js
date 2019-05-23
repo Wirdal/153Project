@@ -1,12 +1,13 @@
 import React, { Component } from 'react';
-import { SearchBar } from 'react-native-elements';
+import { SearchBar, ListItem } from 'react-native-elements';
 import {
-  ScrollView, StyleSheet, View, Text, FlatList, Image, TouchableHighlight,
+  ScrollView, StyleSheet, FlatList,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
   InstantSearch, connectInfiniteHits, connectSearchBox,
 } from 'react-instantsearch-native';
+import UserAvatar from 'react-native-user-avatar';
 
 const styles = StyleSheet.create({
   container: {
@@ -51,23 +52,15 @@ const SearchResults = connectInfiniteHits(({
       data={hits}
       onEndReached={onEndReached}
       keyExtractor={item => item.objectID}
-      renderItem={({ item }) => {
-        return (
-          <TouchableHighlight
-            onPress={
-              () => navigation.push('UserProfile', { userID: item.objectID })
+      renderItem={({ item }) =>
+          <ListItem
+            leftElement={
+              <UserAvatar name={item.username.slice(0, 2).toUpperCase()} size={50} />
             }
-          >
-            <View style={styles.searchResult}>
-              <View style={{ flexDirection: 'column' }}>
-                <View style={styles.userNameRow}>
-                  <Text style={styles.userNameText}>{item.username}</Text>
-                </View>
-              </View>
-            </View>
-          </TouchableHighlight>
-        );
-      }}
+            title={item.username}
+            chevron
+          />
+      }
     />
   );
 });
