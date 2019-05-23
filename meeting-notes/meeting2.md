@@ -27,8 +27,7 @@ board.
 
  Added a chat screen template using the
  [react-native-gifted-chat](https://github.com/FaridSafi/react-native-gifted-chat)
- UI library and customized it to fit app needs ([commit]
- (https://github.com/Wirdal/153Project/commit/51e7612e41045d7157355d0de9a541651070a273)).
+ UI library and customized it to fit app needs ([commit](https://github.com/Wirdal/153Project/commit/51e7612e41045d7157355d0de9a541651070a273)).
 
  Created the Firestore data model to store messages and active chats. We now
  have 2 more collections:
@@ -41,8 +40,9 @@ board.
  - **2. active**: each document stores the users that the current user is
    currently chatting with. This is also used to display data in the
    `ContactsList` and makes it easier to delete chats in case we do this in the
-   future. PS: THE MESSAGES ARE NOT ENCRYPTED YET ([commit]
-   (https://github.com/Wirdal/153Project/commit/1e61f6390d3fc3dd11464428acd4b72ebdc0d51c)).
+   future. 
+
+   PS: THE MESSAGES ARE NOT ENCRYPTED YET ([commit](https://github.com/Wirdal/153Project/commit/1e61f6390d3fc3dd11464428acd4b72ebdc0d51c)).
 
 
 - **Chase**
