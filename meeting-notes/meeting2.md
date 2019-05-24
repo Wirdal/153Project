@@ -1,7 +1,6 @@
 # Sprint Meeting 2 (5/24/2019)
 
-##### See our progress in our [Trello](https://trello.com/b/A29h9i9f/ecs153)
-board.
+##### See our progress in our [Trello](https://trello.com/b/A29h9i9f/ecs153) board.
 
 ## What we did:
 
@@ -28,6 +27,11 @@ board.
  Added a chat screen template using the
  [react-native-gifted-chat](https://github.com/FaridSafi/react-native-gifted-chat)
  UI library and customized it to fit app needs ([commit](https://github.com/Wirdal/153Project/commit/51e7612e41045d7157355d0de9a541651070a273)).
+ 
+ Created an active contacts screen so users can keep track of who they are talking to without
+ having too search for people. The list starts empty but if you search for an user and send them
+ a message, then that user will show up on the list and next time you want to message him/her,
+ just click on their name in the contacts screen ("Home") ([commit](https://github.com/Wirdal/153Project/commit/5932f0a8ffae0f7c007ba09c3b54a4b25d39fb0f)).
 
  Created the Firestore data model to store messages and active chats. We now
  have 2 more collections:
@@ -64,7 +68,8 @@ board.
  Begin working on the README necessary for the final project. I am planning to
  talk about logic for all screens, how the backend/frontend is structured.
 
- Try to improve app performance or find what is causing a loading issue.
+ Try to improve app performance or find out what is making the app load so slowly
+ (check expo, firebase, dependencies or possible react native elements?).
 
 
 - **Chase**
