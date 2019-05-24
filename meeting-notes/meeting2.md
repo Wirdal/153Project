@@ -50,7 +50,7 @@
 
 
 - **Chase**
-
+I have added the backend to the Firebase for Virgil security, along with some very basic looking into implementation for e2e. I toyed around with the code but didn't push anything out, since nothing was funcitonal.
 - **Kush**
 
 
@@ -73,9 +73,10 @@
 
 
 - **Chase**
-
+Currently, I am working on getting the e2e encryption set up now that the chat is funtional. Afterwards, small quality of life improvements and measuring our encryption is on the radar.
 
 - **Kush**
+Help chase with virgil. Add defenses to login in security and research protocols to add to virgil. Then implement it. 
 
 ## Issues we had this week:
 
@@ -93,6 +94,7 @@
 
 - **Chase**
 
+Node. It is the bane of my existance. 
 
 - **Kush**
 
