@@ -3,8 +3,38 @@ import { View, Platform } from 'react-native';
 import { GiftedChat, Bubble } from 'react-native-gifted-chat'
 import KeyboardSpacer from 'react-native-keyboard-spacer';
 import firebase from '../config';
+import { EThree } from '@virgilsecurity/e3kit';
 
 const db = firebase.firestore();
+const CLOUD_FUNCTION_ENDPOINT = 'https://us-central1-ecs153-chat.cloudfunctions.net/api/virgil-jwt'
+
+async function fetchToken(authToken) {
+  const response = await fetch(
+      CLOUD_FUNCTION_ENDPOINT,
+      {
+          headers: new Headers({
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${authToken}`,
+          })
+      },
+  );
+  if (!response.ok) {
+      throw `Error code: ${response.status} \nMessage: ${response.statusText}`;
+  }
+  return response.json().then(data => data.token);
+};
+// Once Firebase user authenticated, we wait for eThree client initialization
+let eThreePromise = new Promise((resolve, reject) => {
+  firebase.auth().onAuthStateChanged(user => {
+      if (user) {
+          const getToken = () => user.getIdToken().then(fetchToken);
+          eThreePromise = EThree.initialize(getToken);
+          eThreePromise.then(resolve).catch(reject);
+      }
+  });
+});
+
+// const eThree = eThreePromise;
 
 class ChatScreen extends React.Component {
   static navigationOptions = ({ navigation }) => ({
@@ -26,6 +56,22 @@ class ChatScreen extends React.Component {
       messages: [],
     }
 
+
+    // Set up for the chat here
+    
+    
+    // SENDING
+    // Get the keys from the virgil cloud
+    // users = [senderUID, recieverUID]
+    // Search for the public key for both sender and receiver
+    // const publicKeys = await eThree.lookupPublicKeys(users);
+    // Encrypt the message
+    // eThree.encrypt(message, publickeys)
+    // Send the message
+
+
+    // RECIEVING
+    // 
     this.appUser = firebase.auth().currentUser.uid
     this.appUserName = ''
     this.peerUserName = ''
