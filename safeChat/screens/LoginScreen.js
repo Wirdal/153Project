@@ -12,14 +12,14 @@ import {
 } from 'react-native';
 import { Input, Button, Icon } from 'react-native-elements';
 import firebase from '../config';
-import { EThree } from '@virgilsecurity/e3kit';
+import { EThree } from '@virgilsecurity/e3kit'; // Their SDK
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 const BG_IMAGE = require('../assets/images/backgroundLogin.jpg');
 // Our API stuff
-const CLOUD_FUNCTION_ENDPOINT = 'https://us-central1-ecs153-chat.cloudfunctions.net/api/virgil-jwt'
+const CLOUD_FUNCTION_ENDPOINT = 'https://us-central1-ecs153-chat.cloudfunctions.net/api/virgil-jwt' //The link to the API calls
 const db = firebase.firestore();
 
 // Enable LayoutAnimation on Android
@@ -27,7 +27,7 @@ UIManager.setLayoutAnimationEnabledExperimental &&
   UIManager.setLayoutAnimationEnabledExperimental(true);
 
 // FUNCTIONS FOR VIRGIL
-// Initialization callback that returns a Virgil JWT string from the E3kit firebase function
+// Initialization callback that returns a Virgil json web token string from the E3kit firebase function
 async function fetchToken(authToken) {
   const response = await fetch(
       CLOUD_FUNCTION_ENDPOINT,
@@ -41,15 +41,14 @@ async function fetchToken(authToken) {
   if (!response.ok) {
       throw `Error code: ${response.status} \nMessage: ${response.statusText}`;
     }
-  console.log(data.token)
   return response.json().then(data => data.token);
 };
 // Once Firebase user authenticated, we wait for eThree client initialization
 let eThreePromise = new Promise((resolve, reject) => {
   firebase.auth().onAuthStateChanged(user => {
       if (user) {
-          const getToken = () => user.getIdToken().then(fetchToken);
-          eThreePromise = EThree.initialize(getToken);
+          const getToken = () => user.getIdToken().then(fetchToken); // Fetch the token of the user
+          eThreePromise = EThree.initialize(getToken); // Init it 
           eThreePromise.then(resolve).catch(reject);
       }
   });
@@ -66,7 +65,7 @@ const TabSelector = ({ selected }) => {
 TabSelector.propTypes = {
   selected: PropTypes.bool.isRequired,
 };
-
+ // Everything within is an object
 export default class LoginScreen extends Component {
   static navigationOptions = {
     title: '',
@@ -79,7 +78,7 @@ export default class LoginScreen extends Component {
 
   constructor(props) {
     super(props);
-
+    // Sets up the begining states of messages
     this.state = {
       email: '',
       isEmailValid: true,
@@ -94,7 +93,7 @@ export default class LoginScreen extends Component {
       errorMessage: null,
     };
   }
-
+  // Transitions between login and signup
   selectCategory(selectedCategory) {
     LayoutAnimation.easeInEaseOut();
     this.setState({
@@ -103,12 +102,14 @@ export default class LoginScreen extends Component {
     });
   }
 
+  // Regex to run email through
   verifyEmail(email) {
     var re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
     return re.test(email);
   }
 
+  // Checks to make sure username is legal
   verifyUsername(username) {
     const valid = username.length > 0;
     this.setState({ usernameValid: valid });
@@ -119,12 +120,13 @@ export default class LoginScreen extends Component {
 
     return valid;
   }
-
+  // The callback fn for when the button is presssed in login mode
   login() {
+    // Get the email and password from the state of inputs
     const { email, password } = this.state;
     const { navigation } = this.props;
     this.setState({ isLoading: true });
-
+    // Send it back to firebase
     firebase.auth()
       .signInWithEmailAndPassword(email, password)
       .then(() => {
@@ -134,37 +136,54 @@ export default class LoginScreen extends Component {
 	this.setState({ isLoading: false });
       });
   }
-
+  // Callback fn for button when not in login state
   signUp() {
+    // Grab the info from the state
     const { username, email, password } = this.state;
+    // Tell app we are going to process
     this.setState({ isLoading: true });
 
+    // Validate input
     if (!(this.validatePassword() && this.validateEmail())) {
       this.setState({ isLoading: false });
       return;
     }
-
+    // Get the collection from our database, the users one to be exact
     const usersRef = db.collection('users');
+    // Does something idk
     const { navigation } = this.props;
 
+
+    // Look through the username fields of the collection, and find the one that matches userinput
     usersRef.where('username', '==', username).get()
-      .then((querySnapshot) => {
-        if (querySnapshot.size > 0) {
+      .then((querySnapshot) => { // Get a snapshot of it
+        if (querySnapshot.size > 0) { //If it is anything, we can't do it 
 	  this.setState({
 	    isLoading: false,
 	    errorMessage: 'A user with this username already exists.',
 	  });
           return;
         }
-
+        // Otherwise, start with creation
         firebase.auth()
-          .createUserWithEmailAndPassword(email, password) // Also create jwt keys here
+          .createUserWithEmailAndPassword(email, password)
+          .then(() => {
+            console.log("Before regist")
+            eThreePromise.then(eThree => {
+              eThree.register()
+            }).catch((error) => {
+              console.log(error)
+            })
+            console.log("after regis")
+          }).catch((error) => {
+            console.log(error);
+          })
+          // Also create jwt keys here
           .then(({ user }) => {
-            usersRef.doc(user.uid).set({
+            usersRef.doc(user.uid).set({ // Write the username to the db
               username,
             }).then(() => {
-              navigation.goBack();
-              // eThreePromise.register();
+              navigation.goBack(); // Go back to the a different page
             }).catch((error) => {
 	      this.setState({
 		errorMessage: error.message,
@@ -178,6 +197,7 @@ export default class LoginScreen extends Component {
       });
   }
 
+  // Validation of username
   validatePassword() {
     const { password, passwordConfirmation } = this.state;
 
@@ -198,7 +218,7 @@ export default class LoginScreen extends Component {
 
     return validConfirmation;
   }
-
+  // Validate username, just gets it from the state
   validateUsername() {
     const { username } = this.state;
 
@@ -211,7 +231,7 @@ export default class LoginScreen extends Component {
 
     return valid;
   }
-
+  // Ditto of validateUser. Get the email and check it
   validateEmail() {
     const { email } = this.state;
 
@@ -225,6 +245,12 @@ export default class LoginScreen extends Component {
     return valid;
   }
 
+
+  // Render the login screen
+  // Does not matter, for my purposes
+
+
+  
   render() {
     const {
       selectedCategory,

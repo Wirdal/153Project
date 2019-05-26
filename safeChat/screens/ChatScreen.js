@@ -99,10 +99,21 @@ class ChatScreen extends React.Component {
       return
     }
 
-    const message = messages[0]
-
+    const message = messages[0];
+    const userToEncrypt = [this.appUser, this.peerID];
+    const publicKeys = eThreePromise.then(ethree => {
+      ethree.lookupPublicKeys(userToEncrypt);
+    }).catch(() => {
+      console.log("Public Key lookup failed")
+    })
+    const encryptMessage = eThreePromise.then(ethree => { // Maybe this should be done as part of
+      ethree.encrypt(message, publicKeys);
+    }).catch((error) => {
+      console.log("Message could not be encrypted")
+      console.log(error);
+    })
     db.collection('messages').add({
-      message: message.text,
+      message: encryptMessage,
       senderID: this.appUser,
       senderName: this.appUserName,
       participants: this.participantsString,
@@ -156,7 +167,6 @@ class ChatScreen extends React.Component {
 
   onMessagesUpdate(querySnapshot) {
     const messages = [];
-
     querySnapshot.forEach((doc) => {
       let {
         senderID, senderName, message, timestamp
