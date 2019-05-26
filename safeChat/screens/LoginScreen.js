@@ -170,7 +170,7 @@ export default class LoginScreen extends Component {
           .then(() => {
             console.log("Before regist")
             eThreePromise.then(eThree => {
-              eThree.register()
+              eThree.register() //TODO: Check if this works
             }).catch((error) => {
               console.log(error)
             })

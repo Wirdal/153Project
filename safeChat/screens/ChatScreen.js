@@ -56,22 +56,6 @@ class ChatScreen extends React.Component {
       messages: [],
     }
 
-
-    // Set up for the chat here
-    
-    
-    // SENDING
-    // Get the keys from the virgil cloud
-    // users = [senderUID, recieverUID]
-    // Search for the public key for both sender and receiver
-    // const publicKeys = await eThree.lookupPublicKeys(users);
-    // Encrypt the message
-    // eThree.encrypt(message, publickeys)
-    // Send the message
-
-
-    // RECIEVING
-    // 
     this.appUser = firebase.auth().currentUser.uid
     this.appUserName = ''
     this.peerUserName = ''
@@ -106,14 +90,14 @@ class ChatScreen extends React.Component {
     }).catch(() => {
       console.log("Public Key lookup failed")
     })
-    const encryptMessage = eThreePromise.then(ethree => { // Maybe this should be done as part of
+    const encryptMessage = eThreePromise.then(ethree => { // Maybe this should be done as part of something else
       ethree.encrypt(message, publicKeys);
     }).catch((error) => {
       console.log("Message could not be encrypted")
       console.log(error);
     })
     db.collection('messages').add({
-      message: encryptMessage,
+      message: encryptMessage, //TODO: Send the encrypted message, find where it is pulled 
       senderID: this.appUser,
       senderName: this.appUserName,
       participants: this.participantsString,
