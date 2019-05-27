@@ -3,38 +3,9 @@ import { View, Platform } from 'react-native';
 import { GiftedChat, Bubble } from 'react-native-gifted-chat'
 import KeyboardSpacer from 'react-native-keyboard-spacer';
 import firebase from '../config';
-import { EThree } from '@virgilsecurity/e3kit';
+import eThreePromise from '../ethree';
 
 const db = firebase.firestore();
-const CLOUD_FUNCTION_ENDPOINT = 'https://us-central1-ecs153-chat.cloudfunctions.net/api/virgil-jwt'
-
-async function fetchToken(authToken) {
-  const response = await fetch(
-      CLOUD_FUNCTION_ENDPOINT,
-      {
-          headers: new Headers({
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${authToken}`,
-          })
-      },
-  );
-  if (!response.ok) {
-      throw `Error code: ${response.status} \nMessage: ${response.statusText}`;
-  }
-  return response.json().then(data => data.token);
-};
-// Once Firebase user authenticated, we wait for eThree client initialization
-let eThreePromise = new Promise((resolve, reject) => {
-  firebase.auth().onAuthStateChanged(user => {
-      if (user) {
-          const getToken = () => user.getIdToken().then(fetchToken);
-          eThreePromise = EThree.initialize(getToken);
-          eThreePromise.then(resolve).catch(reject);
-      }
-  });
-});
-
-// const eThree = eThreePromise;
 
 class ChatScreen extends React.Component {
   static navigationOptions = ({ navigation }) => ({
@@ -74,30 +45,29 @@ class ChatScreen extends React.Component {
     this.unsubscribe = null
   }
 
-  componentWillMount() {
+  async componentWillMount() {
     this.unsubscribe = this.messagesRef.onSnapshot(this.onMessagesUpdate.bind(this));
+    this.eThree = await eThreePromise;
+    const hasPrivateKey = await this.eThree.hasLocalPrivateKey();
+    if (!hasPrivateKey) {
+      await this.eThree.register()
+    }
   }
 
-  onSend(messages = []) {
+  async onSend(messages = []) {
     if (messages.length === 0) {
       return
     }
 
+    const eThree = this.eThree;
+
     const message = messages[0];
-    const userToEncrypt = [this.appUser, this.peerID];
-    const publicKeys = eThreePromise.then(ethree => {
-      ethree.lookupPublicKeys(userToEncrypt);
-    }).catch(() => {
-      console.log("Public Key lookup failed")
-    })
-    const encryptMessage = eThreePromise.then(ethree => { // Maybe this should be done as part of something else
-      ethree.encrypt(message, publicKeys);
-    }).catch((error) => {
-      console.log("Message could not be encrypted")
-      console.log(error);
-    })
+    const usersToEncryptTo = [this.appUser, this.peerID];
+    const publicKeys = await eThree.lookupPublicKeys(usersToEncryptTo);
+    const encryptedMessage = await eThree.encrypt(message.text, publicKeys);
+
     db.collection('messages').add({
-      message: encryptMessage, //TODO: Send the encrypted message, find where it is pulled 
+      message: encryptedMessage,
       senderID: this.appUser,
       senderName: this.appUserName,
       participants: this.participantsString,
@@ -149,8 +119,8 @@ class ChatScreen extends React.Component {
     this.unsubscribe();
   }
 
-  onMessagesUpdate(querySnapshot) {
-    const messages = [];
+  async onMessagesUpdate(querySnapshot) {
+    const encryptedMessages = [];
     querySnapshot.forEach((doc) => {
       let {
         senderID, senderName, message, timestamp
@@ -162,7 +132,7 @@ class ChatScreen extends React.Component {
         timestamp = timestamp.toDate()
       }
 
-      messages.push({
+      encryptedMessages.push({
         _id: doc.id,
         text: message,
         createdAt: timestamp,
@@ -172,6 +142,21 @@ class ChatScreen extends React.Component {
         }
       });
     });
+
+    const messages = []
+    const eThree = this.eThree;
+
+    for (const encryptedMessage of encryptedMessages) {
+      try {
+        const publicKey = await eThree.lookupPublicKeys(encryptedMessage.user._id);
+        const decryptedText = await eThree.decrypt(encryptedMessage.text, publicKey);
+        const message = { ...encryptedMessage, text: decryptedText }
+
+        messages.push(message);
+      } catch (e) {
+        console.log(`Could not decrypt message from ${encryptedMessage.user._id}: ${e}`)
+      }
+    }
 
     const sortedMessages = messages.sort((a, b) => (b.createdAt - a.createdAt));
 
