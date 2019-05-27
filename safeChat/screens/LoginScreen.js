@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { Input, Button, Icon } from 'react-native-elements';
 import firebase from '../config';
+import { RSA } from 'react-native-rsa-native';
+
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -116,33 +118,69 @@ export default class LoginScreen extends Component {
     const usersRef = db.collection('users');
     const { navigation } = this.props;
 
+
+    /* Crypto should be built into node js
+       For version 10.12 or better.
+       Creating Public and Private Keys for User
+    */
+    /*
+    const { generateKeyPair } = require('crypto ');
+    generateKeyPair('rsa', {
+      modulusLength: 4096,
+      publicKeyEncoding: {
+        type: 'spki',
+        format: 'pem'
+      },
+      privateKeyEncoding: {
+        type: 'pkcs8',
+        format: 'pem',
+        cipher: 'aes-256-ctr',
+        passphrase: ''
+      }
+    }, (err, publicKey, privateKey) => {
+        // Handling errors
+        errorMessage: error.message,
+        isLoading: false,
+    }); */
+
+    var RSAKey = require('react-native-rsa-native');
+    const bytes = 512;
+    const exponent = '10001';
+    var rsa = new RSAKey();
+    var r   = rsa.generate(bits*4, exponent);
+    var publicKey = rsa.RSAGetPublicString();
+    var privateKey = rsa.RSAGetPrivateString();
+
+    //
+
     usersRef.where('username', '==', username).get()
       .then((querySnapshot) => {
         if (querySnapshot.size > 0) {
-	  this.setState({
-	    isLoading: false,
-	    errorMessage: 'A user with this username already exists.',
-	  });
+      	  this.setState({
+        	    isLoading: false,
+        	    errorMessage: 'A user with this username already exists.',
+      	  });
           return;
         }
 
         firebase.auth()
           .createUserWithEmailAndPassword(email, password)
           .then(({ user }) => {
+
             usersRef.doc(user.uid).set({
-              username,
+              username, privateKey, publicKey
             }).then(() => {
               navigation.goBack();
             }).catch((error) => {
-	      this.setState({
-		errorMessage: error.message,
-		isLoading: false,
-	      });
+        	    this.setState({
+        		    errorMessage: error.message,
+        		    isLoading: false,
+        	    });
             });
-	  }).catch(error => this.setState({
-	    errorMessage: error.message,
-	    isLoading: false,
-	  }));
+	        }).catch(error => this.setState({
+	           errorMessage: error.message,
+	           isLoading: false,
+	        }));
       });
   }
 
