@@ -30,14 +30,19 @@ class ChatScreen extends React.Component {
     this.appUser = firebase.auth().currentUser.uid
     this.appUserName = ''
     this.peerUserName = ''
+    // Get the usernames from the database
     db.collection('users').doc(this.appUser).get()
       .then((userDoc) => {
         this.appUserName = userDoc.data().username
+      }).catch((error)=> {
+        console.log(error)
       })
     this.peerID = navigation.state.params.user.userID
     db.collection('users').doc(this.peerID).get()
       .then((userDoc) => {
         this.peerUserName = userDoc.data().username
+      }).catch((error)=> {
+        console.log(error)
       })
     this.participantsString = [this.appUser, this.peerID].sort().join(',')
     this.messagesRef = db.collection('messages')
@@ -63,9 +68,10 @@ class ChatScreen extends React.Component {
 
     const message = messages[0];
     const usersToEncryptTo = [this.appUser, this.peerID];
-    const publicKeys = await eThree.lookupPublicKeys(usersToEncryptTo);
-    const encryptedMessage = await eThree.encrypt(message.text, publicKeys);
-
+    console.log(usersToEncryptTo);
+    const publicKeys = await eThree.lookupPublicKeys(usersToEncryptTo); // Failing on the public key lookup?
+    // const encryptedMessage = await eThree.encrypt(message.text, publicKeys);
+    const encryptedMessage = 'hardcodeed'
     db.collection('messages').add({
       message: encryptedMessage,
       senderID: this.appUser,

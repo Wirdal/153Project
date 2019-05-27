@@ -47,6 +47,9 @@ export default class HomeScreen extends React.Component {
     db.collection('users').doc(this.appUser).get()
       .then((userDoc) => {
         this.appUserName = userDoc.data().username
+      }).catch((error) => {
+        console.log(error);
+        console.log(this.appUser);
       })
     this.chatsRef = db.collection('chats').doc(this.appUser)
     this.unsubscribe = null

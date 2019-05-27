@@ -103,7 +103,7 @@ export default class LoginScreen extends Component {
     this.setState({ isLoading: true });
     // Send it back to firebase
     firebase.auth()
-      .signInWithEmailAndPassword(email, password)
+      .signInWithEmailAndPassword(email, password) // Do we need to fetch the key??
       .then(() => {
 	navigation.goBack();
       }).catch((error) => {
@@ -142,15 +142,13 @@ export default class LoginScreen extends Component {
 	// Otherwise, start with creation
 	firebase.auth()
 	  .createUserWithEmailAndPassword(email, password)
-	  .then(() => {
-	    this.eThree.register()
-	  }).catch((error) => {
-	    console.log(error);
-	  })
 	  .then(({ user }) => {
 	    usersRef.doc(user.uid).set({ // Write the username to the db
 	      username,
-	    }).then(() => {
+      }).then(() => {
+        this.eThree.register()
+      })
+      .then(() => {
 	      navigation.goBack(); // Go back to the a different page
 	    }).catch((error) => {
 	      this.setState({
