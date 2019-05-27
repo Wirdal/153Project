@@ -4,6 +4,7 @@ import { GiftedChat, Bubble } from 'react-native-gifted-chat'
 import KeyboardSpacer from 'react-native-keyboard-spacer';
 import firebase from '../config';
 import eThreePromise from '../ethree';
+import { error } from 'util';
 
 const db = firebase.firestore();
 
@@ -68,10 +69,11 @@ class ChatScreen extends React.Component {
 
     const message = messages[0];
     const usersToEncryptTo = [this.appUser, this.peerID];
-    console.log(usersToEncryptTo);
-    const publicKeys = await eThree.lookupPublicKeys(usersToEncryptTo); // Failing on the public key lookup?
-    // const encryptedMessage = await eThree.encrypt(message.text, publicKeys);
-    const encryptedMessage = 'hardcodeed'
+    const publicKeys = await eThree.lookupPublicKeys(usersToEncryptTo); // Fails on pubkey lookup
+    // Err code
+    // [Unhandled promise rejection: LookupError: Failed some public keys lookups. You can see the results by calling error.lookupResult property of this error instance]
+
+    const encryptedMessage = await eThree.encrypt(message.text, publicKeys);
     db.collection('messages').add({
       message: encryptedMessage,
       senderID: this.appUser,
