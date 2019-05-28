@@ -3,6 +3,7 @@ import { View, Platform } from 'react-native';
 import { GiftedChat, Bubble } from 'react-native-gifted-chat'
 import KeyboardSpacer from 'react-native-keyboard-spacer';
 import firebase from '../config';
+import {Crypt, keyManager, RSA} from 'hybrid-crypto-js';
 
 const db = firebase.firestore();
 
@@ -29,14 +30,25 @@ class ChatScreen extends React.Component {
     this.appUser = firebase.auth().currentUser.uid
     this.appUserName = ''
     this.peerUserName = ''
+    this.appPrivateKey = ''
+    this.peerPublicKey = ''
     db.collection('users').doc(this.appUser).get()
       .then((userDoc) => {
         this.appUserName = userDoc.data().username
+
+        // Obtaining senders privateKey for this user ...
+        // to decrypt encrypted messages they receive.
+        this.appPrivateKey = userDoc.data().privateKey
+
       })
     this.peerID = navigation.state.params.user.userID
     db.collection('users').doc(this.peerID).get()
       .then((userDoc) => {
         this.peerUserName = userDoc.data().username
+
+        // Obtaining receivers public key for that user ...
+        // to decrypt encrypted message that current user is sending.
+        this.peerPublicKey = userDoc.data().publicKey
       })
     this.participantsString = [this.appUser, this.peerID].sort().join(',')
     this.messagesRef = db.collection('messages')
@@ -53,7 +65,19 @@ class ChatScreen extends React.Component {
       return
     }
 
-    const message = messages[0]
+    //------ Encryption
+    var crypt = new Crypt();
+
+    console.log(messages);
+
+    const plain_message = messages[0];
+
+    console.log(plain_message['text']);
+
+    const message = crypt.encrypt(this.peerPublicKey, plain_message['text']);
+
+    console.log(message);
+    //------ Encryption
 
     db.collection('messages').add({
       message: message.text,

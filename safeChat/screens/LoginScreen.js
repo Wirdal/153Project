@@ -120,43 +120,49 @@ export default class LoginScreen extends Component {
 
     var rsa = new RSA();
 
-    console.log('start');
-
-    global keypair;
+    var keys_list;
 
     rsa.generateKeypair(function(keypair) {
 
       // Callback function receives new keypair as a first argument
       var publicKey = keypair.publicKey;
       var privateKey = keypair.privateKey;
+
+      console.log(publicKey);
+      console.log(privateKey);
+
     }, 1024);
 
-    console.log('moment of truth');
-    console.log(keypair);
-    console.log('stop');
+    /*var publicKey = "-----BEGIN PUBLIC KEY----- \n MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC7EJ1dQvGcE+uwDzyJ2VED9g+J \n 5EWM5duRv2VumeK/tzDP+55FHcORW9Hpzn2WZh0XZLNcmwcJi7O948ISWWg8ylnf \n JrNb3DooWT53x9MDQr6J8v0f+RPe/thRSLvJflH0nyxciYQEU2AfXv1omOvfZS3Y \n AbJ0Uxgh6oGE4asIbwIDAQAB \n -----END PUBLIC KEY-----";
 
-    // console.log('Step 1');
-    // var rsa = new RSA();
-    //
-    // rsa.generateKeypair(function(keypair) {
-    //   // Callback function receives new keypair as a first argument
-    //   var publicKey = keypair.publicKey;
-    //   var privateKey = keypair.privateKey;
-    // });
-    // console.log('Step 2');
-    // const NodeRSA = require('node-rsa');
-    //
-    // console.log('Step 1');
-    // const key = new NodeRSA({b : 512});
-    //
-    // const key1 = key.generateKeyPair(2048, '11111');
-    //
-    // console.log('Step 2');
-    // const privateKey = key.exportKey('pkcs8-private');
-    // const publicKey  = key.exportKey('pkcs8-public');
+    /var publicKey = "-----BEGIN PUBLIC KEY----- \
+                    MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCK2V05rB6q0+TKWMl/cXww+L0D \
+                    2t2pDbERGOZzBYyw9wx+kb/iI1osUAZIMjP4MTS81n0XUS2FaPWHIRTzLmP9WJyD \
+                    eHwLR/7Dhm7y9M7B20YQ9sawczbXq2MyiyVL8TA5970TQc50yexN35/xdzLQMi6W \
+                    gVqqLDMBR8vwUHES+QIDAQAB \
+                    -----END PUBLIC KEY-----";
+
+    var privateKey = "-----BEGIN RSA PRIVATE KEY----- MIICXQIBAAKBgQCK2V05rB6q0+TKWMl/cXww+L0D2t2pDbERGOZzBYyw9wx+kb/i I1osUAZIMjP4MTS81n0XUS2FaPWHIRTzLmP9WJyDeHwLR/7Dhm7y9M7B20YQ9saw czbXq2MyiyVL8TA5970TQc50yexN35/xdzLQMi6WgVqqLDMBR8vwUHES+QIDAQAB AoGALCtZbK9EUjN15Ki58MC5MRrvhfpp6Q1h9n5lUNHDH8h3QQw8bkOwu8f5N55A ygNdM3VH9dLtGDN7Z7EuaO2pAMZJLQurcYnMwqYEjJ7NjWv1paDqTkz07AXtgEac +GfYN3RvLUV6NTQegT1F4uoEHrTqJ23QdI+PzcleVKHs+AECQQDQ+DmmG4Ccc462 s7ivqCVINwN74A8ogekzJwDKFUqx/4BN3Y5IQrqXA9W33wIDOzn9Tfu+4p4MhWgh FK5cqxRRAkEAqhklnKL7k2Yd/KJwpqvdSuqvrvdW7+XwTRdg2zoPufnrNw2rOq6R Woym94f09JGDCb3f0bJepAuLFtl3yCMyKQJAX+CT6q+RqbanUxJQeV+ng2OiWJKr wcUhLtQFW7K7K8Hzp0YxAtyC6cjbpNpP/RWOfLbr+1/UbiBDb3IisefYkQJBAJ9H xwGjWQMQ17mvft+EBkfV9cdYk483eUsnPiprdziGf6zg3tunhjMNjHg0VrwB2nvv 0jux1I+2w3sVDuZZlukCQQClzsS2ZlWb3QBPsQRlgYhh2ov8M87ebHF0yflTZZCc 0PQ6ejZ2GfgvsHlM18noL9vf4E18DxQBRJRdVjJoJyF1 -----END RSA PRIVATE KEY-----";
+
+    var privateKey = "-----BEGIN RSA PRIVATE KEY----- \
+                      MIICWwIBAAKBgQC7EJ1dQvGcE+uwDzyJ2VED9g+J5EWM5duRv2VumeK/tzDP+55F \
+                      HcORW9Hpzn2WZh0XZLNcmwcJi7O948ISWWg8ylnfJrNb3DooWT53x9MDQr6J8v0f \
+                      +RPe/thRSLvJflH0nyxciYQEU2AfXv1omOvfZS3YAbJ0Uxgh6oGE4asIbwIDAQAB \
+                      AoGACcGSE30cUMGRNzt0MtRMr2Iz6UMohXKvguhyh9QqyUjqmM5MsNoeiwQ47HLC \
+                      hgeJWOD9ocTMFylcFHk+c+qJzxrG2SdjzI9eriyu2Y2ayPAKyRZcCJf+tyf+ixTi \
+                      /PqtJGbniRHEJbcn6S/xBXe1/pzelP/Bf94JGIl5LuYI5YECQQD8k1oRLwF6kgun \
+                      8k+Qjr3uBmf55aDM8jYOtq8nbGdOBCqiaSosEKW5mxU7VqtBb+yQ8yfCn4oYOn/L \
+                      0SZOXs4hAkEAvZni1ogaCCLUFu6EdKhLHGrA+EJETP0GDrZMo8bHxmO6Z7iQMGvE \
+                      0CxfYkAGPLYLewL5eI7S5Y9ltbQWIhFkjwJADot1vlOUpDhQz4UWq95sdY6M4kkk \
+                      72hrUIGYqI6HjGiVA/FGam8y+/NAT8B38Da/ysEV4xFI5IhJ37TVneG7wQJAZ8pp \
+                      5s6ykWmfeL4xPDs0guXdpQmBojOQsVUSN0WF7xCA5m6eYCNepibkQECUKX/uYPSL \
+                      5Hcq9Ae/wexHgXbL+QJAY7mXz2vPLEibmLWxLAck2nV1/q1d5bv5NY8ENrbj/Ebg \
+                      Zv5786zyndUP4s+aNiE9m6Kldq6Tv6WvAZ1lPoLZZA== \
+                      -----END RSA PRIVATE KEY-----";
+
 
     // Get device specific RSA key pair
-    /*keyManager.getKeys(function(keypair) {
+    keyManager.getKeys(function(keypair) {
 
         // Callback function receives new keypair as a first argument
         var publicKey = keypair.publicKey;
@@ -170,31 +176,33 @@ export default class LoginScreen extends Component {
     usersRef.where('username', '==', username).get()
       .then((querySnapshot) => {
         if (querySnapshot.size > 0) {
-	  this.setState({
-	    isLoading: false,
-	    errorMessage: 'A user with this username already exists.',
-	  });
+      	  this.setState({
+      	    isLoading: false,
+      	    errorMessage: 'A user with this username already exists.',
+      	  });
           return;
         }
 
         firebase.auth()
           .createUserWithEmailAndPassword(email, password)
           .then(({ user }) => {
+
             usersRef.doc(user.uid).set({
-              username, // privateKey, publicKey
+              username, privateKey, publicKey
               //this is where i want to push the private key and public key
-            }).then(() => {
+            })
+            .then(() => {
               navigation.goBack();
             }).catch((error) => {
-	      this.setState({
-		errorMessage: error.message,
-		isLoading: false,
-	      });
+      	      this.setState({
+            	   errorMessage: error.message,
+            	   isLoading: false,
+      	      });
             });
-	  }).catch(error => this.setState({
-	    errorMessage: error.message,
-	    isLoading: false,
-	  }));
+      	  }).catch(error => this.setState({
+      	    errorMessage: error.message,
+      	    isLoading: false,
+      	  }));
       });
   }
 
