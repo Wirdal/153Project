@@ -44,13 +44,8 @@ TabNavigator.navigationOptions = ({ navigation }) => ({
   headerRight: (
     <Button
       onPress={() => handleLogout({ navigation })}
-      icon={(
-        <Icon
-          name="menu"
-          size={32}
-          color="#FF7500"
-        />
-      )}
+      titleStyle={{ color: '#FF7500'}}
+      title="Log Out"
       type="clear"
     />
   ),
