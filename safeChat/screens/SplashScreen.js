@@ -10,6 +10,8 @@ import {
 import { StackActions, NavigationActions } from 'react-navigation';
 import firebase from '../config';
 
+const db = firebase.firestore();
+
 const BG_IMAGE = require('../assets/images/backgroundLogin.jpg');
 const LOADING_ICON = require('../assets/images/loadingIcon.png');
 
@@ -36,12 +38,19 @@ class SplashScreen extends Component {
   componentDidMount() {
     const { navigation } = this.props;
 
-    firebase.auth().onAuthStateChanged((user) => {
+    firebase.auth().onAuthStateChanged(async (user) => {
       const actions = [];
       if (user) {
+        const appUserDoc = await db.collection('users').doc(user.uid).get()
+        const appUserName = appUserDoc.data().username
         actions.push(
           NavigationActions.navigate({
-            routeName: 'Main', key: user.uid, params: { userID: user.uid },
+            routeName: 'Main',
+            key: user.uid,
+            params: {
+              title: `Hello ${appUserName}`,
+              userID: user.uid
+            },
           }),
         );
       } else {

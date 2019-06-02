@@ -7,6 +7,7 @@ import { StackActions, NavigationActions } from 'react-navigation';
 import HomeScreen from './HomeScreen';
 import SearchScreen from './SearchScreen';
 import firebase from '../config';
+import eThreePromise from '../ethree';
 
 const TabNavigator = createMaterialBottomTabNavigator({
   Home: HomeScreen,
@@ -19,7 +20,15 @@ const TabNavigator = createMaterialBottomTabNavigator({
   labeled: true,
 });
 
-const handleLogout = ({ navigation }) => {
+const handleLogout = async ({ navigation }) => {
+  const eThree = await eThreePromise
+  try {
+    await eThree.cleanup();
+    console.log("logged out")
+  } catch(err) {
+    console.log(err);
+  }
+
   firebase.auth().signOut().then(() => {
     const resetAction = StackActions.reset({
       index: 0,
@@ -30,7 +39,7 @@ const handleLogout = ({ navigation }) => {
 }
 
 TabNavigator.navigationOptions = ({ navigation }) => ({
-  title: 'Safe Chat',
+  title: navigation.state.params.title,
   headerLeft: null,
   headerTintColor: '#FF7500',
   headerStyle: {

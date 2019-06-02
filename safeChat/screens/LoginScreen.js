@@ -95,6 +95,7 @@ export default class LoginScreen extends Component {
 
     return valid;
   }
+
   // The callback fn for when the button is presssed in login mode
   login() {
     // Get the email and password from the state of inputs
@@ -104,13 +105,24 @@ export default class LoginScreen extends Component {
     // Send it back to firebase
     firebase.auth()
       .signInWithEmailAndPassword(email, password) // Do we need to fetch the key??
-      .then(() => {
+      .then(async () => {
+	const hasPrivateKey = await this.eThree.hasLocalPrivateKey();
+	console.log("hasLocalPrivateKey:", hasPrivateKey)
+	try {
+	  await this.eThree.restorePrivateKey(password);
+	} catch(err) {
+	  console.log(err)
+	  await this.eThree.register();
+	  await this.eThree.backupPrivateKey(password);
+	}
+
 	navigation.goBack();
       }).catch((error) => {
 	this.setState({ errorMessage: error.message });
 	this.setState({ isLoading: false });
       });
   }
+
   // Callback fn for button when not in login state
   signUp() {
     // Grab the info from the state
@@ -145,10 +157,9 @@ export default class LoginScreen extends Component {
 	  .then(({ user }) => {
 	    usersRef.doc(user.uid).set({ // Write the username to the db
 	      username,
-      }).then(() => {
-        this.eThree.register()
-      })
-      .then(() => {
+	    }).then(async () => {
+	      await this.eThree.register()
+	      await this.eThree.backupPrivateKey(password);
 	      navigation.goBack(); // Go back to the a different page
 	    }).catch((error) => {
 	      this.setState({
@@ -184,6 +195,7 @@ export default class LoginScreen extends Component {
 
     return validConfirmation;
   }
+
   // Validate username, just gets it from the state
   validateUsername() {
     const { username } = this.state;
@@ -197,6 +209,7 @@ export default class LoginScreen extends Component {
 
     return valid;
   }
+
   // Ditto of validateUser. Get the email and check it
   validateEmail() {
     const { email } = this.state;
@@ -211,12 +224,8 @@ export default class LoginScreen extends Component {
     return valid;
   }
 
-
   // Render the login screen
   // Does not matter, for my purposes
-
-
-
   render() {
     const {
       selectedCategory,
