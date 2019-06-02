@@ -11,6 +11,7 @@ import SearchScreen from './screens/SearchScreen';
 import ChatScreen from './screens/ChatScreen';
 
 YellowBox.ignoreWarnings(['Setting a timer']);
+
 const AppNavigator = createStackNavigator({
   Splash: { screen: SplashScreen },
   Login: { screen: LoginScreen },

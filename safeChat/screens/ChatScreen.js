@@ -1,11 +1,31 @@
 import React from 'react'
-import { View, Platform, ActivityIndicator } from 'react-native';
+import {
+  ActivityIndicator,
+  Dimensions,
+  Platform,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { GiftedChat, Bubble } from 'react-native-gifted-chat'
 import KeyboardSpacer from 'react-native-keyboard-spacer';
 import firebase from '../config';
 import eThreePromise from '../ethree';
 
 const db = firebase.firestore();
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const SCREEN_HEIGHT = Dimensions.get('window').height;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    top: 0,
+    left: 0,
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
 
 class ChatScreen extends React.Component {
   static navigationOptions = ({ navigation }) => ({
@@ -176,14 +196,19 @@ class ChatScreen extends React.Component {
 
     const sortedMessages = messages.sort((a, b) => (b.createdAt - a.createdAt));
 
-    this.setState({ messages: sortedMessages });
+    this.setState({
+      messages: sortedMessages,
+      loading: false,
+    });
   }
 
   render() {
     const { loading } = this.state
     return (loading ?
-      <ActivityIndicator size="large" color="#FF7500" />
-    :
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#FF7500" />
+      </View>
+      :
       <View style={{flex: 1}}>
         <GiftedChat
           messages={this.state.messages}
