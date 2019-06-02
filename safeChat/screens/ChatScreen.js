@@ -41,11 +41,11 @@ class ChatScreen extends React.Component {
   }
 
   async componentWillMount() {
-    this.unsubscribe = this.messagesRef.onSnapshot(this.onMessagesUpdate.bind(this));
+    const { appUser, peerID } = this;
 
     // Get the usernames from the database
-    const appUserDoc = await db.collection('users').doc(this.appUser).get()
-    const peerDoc = await db.collection('users').doc(this.peerID).get()
+    const appUserDoc = await db.collection('users').doc(appUser).get()
+    const peerDoc = await db.collection('users').doc(peerID).get()
 
     this.eThree = await eThreePromise;
     const hasPrivateKey = await this.eThree.hasLocalPrivateKey();
@@ -53,11 +53,17 @@ class ChatScreen extends React.Component {
       await this.eThree.register()
     }
 
+    const usersToEncryptTo = [appUser, peerID];
+    const publicKeys = await this.eThree.lookupPublicKeys(usersToEncryptTo);
+
     this.setState({
       appUserName: appUserDoc.data().username,
       peerUserName: peerDoc.data().username,
+      publicKeys,
       loading: false,
     });
+
+    this.unsubscribe = this.messagesRef.onSnapshot(this.onMessagesUpdate.bind(this));
   }
 
   async onSend(messages = []) {
@@ -66,15 +72,13 @@ class ChatScreen extends React.Component {
     }
 
     const { eThree, appUser, peerID, participantsString } = this;
-    const { appUserName, peerUserName } = this.state;
+    const { appUserName, peerUserName, publicKeys } = this.state;
 
     const message = messages[0];
-    const usersToEncryptTo = [appUser, peerID];
-    const publicKeys = await eThree.lookupPublicKeys(usersToEncryptTo); // Fails on pubkey lookup
-    // Err code
-    // [Unhandled promise rejection: LookupError: Failed some public keys lookups. You can see the results by calling error.lookupResult property of this error instance]
 
+    const t = Date.now()
     const encryptedMessage = await eThree.encrypt(message.text, publicKeys);
+    console.log("encrypting time: ", Date.now() - t)
     db.collection('messages').add({
       message: encryptedMessage,
       senderID: appUser,
@@ -154,11 +158,14 @@ class ChatScreen extends React.Component {
 
     const messages = []
     const eThree = this.eThree;
+    const publicKeys = this.state.publicKeys;
 
     for (const encryptedMessage of encryptedMessages) {
       try {
-        const publicKey = await eThree.lookupPublicKeys(encryptedMessage.user._id);
+        const publicKey = publicKeys[encryptedMessage.user._id];
+        const t = Date.now()
         const decryptedText = await eThree.decrypt(encryptedMessage.text, publicKey);
+        console.log("decrypting time: ", Date.now() - t)
         const message = { ...encryptedMessage, text: decryptedText }
 
         messages.push(message);
