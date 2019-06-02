@@ -8,23 +8,12 @@ import {
 } from 'react-native';
 import { ListItem } from 'react-native-elements';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { StackActions, NavigationActions } from 'react-navigation';
 import firebase from '../config';
 import UserAvatar from 'react-native-user-avatar';
 
 const db = firebase.firestore();
 
 export default class HomeScreen extends React.Component {
-  static handleLogout = ({ navigation }) => {
-    firebase.auth().signOut().then(() => {
-      const resetAction = StackActions.reset({
-        index: 0,
-        actions: [NavigationActions.navigate({ routeName: 'Login' })],
-      });
-      navigation.dispatch(resetAction);
-    });
-  }
-
   static navigationOptions = props => ({
     tabBarIcon: ({ tintColor }) => (<Icon name="home" size={24} color={tintColor} />),
     title: 'Home',

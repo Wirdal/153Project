@@ -68,28 +68,47 @@ class ChatScreen extends React.Component {
     const peerDoc = await db.collection('users').doc(peerID).get()
 
     this.eThree = await eThreePromise;
-    const hasPrivateKey = await this.eThree.hasLocalPrivateKey();
-    if (!hasPrivateKey) {
-      await this.eThree.register()
+    const usersToEncryptTo = [...new Set([appUser, peerID])];
+    let publicKeys
+    try {
+      publicKeys = await this.eThree.lookupPublicKeys(usersToEncryptTo);
+    } catch(err) {
+      console.error(err.lookupResult)
     }
-
-    const usersToEncryptTo = [appUser, peerID];
-    const publicKeys = await this.eThree.lookupPublicKeys(usersToEncryptTo);
 
     this.setState({
       appUserName: appUserDoc.data().username,
       peerUserName: peerDoc.data().username,
       publicKeys,
-      loading: false,
     });
 
     this.unsubscribe = this.messagesRef.onSnapshot(this.onMessagesUpdate.bind(this));
   }
 
+  createChat(user1, user2) {
+    const leftRef = db.collection('chats').doc(user1.id)
+    const leftChat = {
+      id: user2.id,
+      username: user2.username,
+      timestamp: Date.now(),
+    };
+    leftRef.get()
+      .then(docSnapshot => {
+        if (docSnapshot.exists) {
+          const current = docSnapshot.data().active
+          leftRef.update({
+            active: current.filter(({ id }) => id !== leftChat.id ).concat(leftChat),
+          });
+        } else {
+          leftRef.set({
+            active: [leftChat],
+          });
+        }
+      });
+  }
+
   async onSend(messages = []) {
-    if (messages.length === 0) {
-      return
-    }
+    if (messages.length === 0) { return }
 
     const { eThree, appUser, peerID, participantsString } = this;
     const { appUserName, peerUserName, publicKeys } = this.state;
@@ -107,77 +126,48 @@ class ChatScreen extends React.Component {
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
     });
 
-    const leftRef = db.collection('chats').doc(appUser)
-    const leftChat = {
-      id: peerID,
-      username: peerUserName,
-      timestamp: Date.now(),
-    };
-    leftRef.get()
-      .then(docSnapshot => {
-        if (docSnapshot.exists) {
-          const current = docSnapshot.data().active
-          leftRef.update({
-            active: current.filter(({ id }) => id !== leftChat.id ).concat(leftChat),
-          });
-        } else {
-          leftRef.set({
-            active: [leftChat],
-          });
-        }
-      });
-
-    const rightRef = db.collection('chats').doc(peerID)
-    const rightChat = {
-      id: appUser,
-      username: appUserName,
-      timestamp: Date.now(),
-    };
-    rightRef.get()
-      .then(docSnapshot => {
-        if (docSnapshot.exists) {
-          const current = docSnapshot.data().active
-          rightRef.update({
-            active: current.filter(({ id }) => id !== rightChat.id ).concat(rightChat),
-          });
-        } else {
-          rightRef.set({
-            active: [rightChat],
-          });
-        }
-      });
+    const appUserObj = { id: appUser, username: appUserName }
+    const peerUserObj = { id: peerID, username: peerUserName }
+    this.createChat(appUserObj, peerUserObj)
+    this.createChat(peerUserObj, appUserObj)
   }
 
   componentWillUnmount() {
-    this.unsubscribe();
+    if (this.unsubscribe) this.unsubscribe();
   }
 
   async onMessagesUpdate(querySnapshot) {
     const encryptedMessages = [];
-    querySnapshot.forEach((doc) => {
-      let {
-        senderID, senderName, message, timestamp
-      } = doc.data();
+    querySnapshot.docChanges().forEach(function(change) {
+      if (change.type === "added") {
+        let {
+          senderID, senderName, message, timestamp
+        } = change.doc.data();
 
-      if (!timestamp) {
-        timestamp = Date.now()
-      } else {
-        timestamp = timestamp.toDate()
+        if (!timestamp) {
+          timestamp = Date.now()
+        } else {
+          timestamp = timestamp.toDate()
+        }
+
+        encryptedMessages.push({
+          _id: change.doc.id,
+          text: message,
+          createdAt: timestamp,
+          user: {
+            _id: senderID,
+            name: senderName
+          }
+        });
       }
 
-      encryptedMessages.push({
-        _id: doc.id,
-        text: message,
-        createdAt: timestamp,
-        user: {
-          _id: senderID,
-          name: senderName
-        }
-      });
+      // messages cannot be edited or removed yet
+      // if (change.type === "removed") { }
+      // if (change.type === "modified") { }
     });
 
-    const messages = []
     const eThree = this.eThree;
+    const messages = [...this.state.messages]
     const publicKeys = this.state.publicKeys;
 
     for (const encryptedMessage of encryptedMessages) {
@@ -185,7 +175,7 @@ class ChatScreen extends React.Component {
         const publicKey = publicKeys[encryptedMessage.user._id];
         const t = Date.now()
         const decryptedText = await eThree.decrypt(encryptedMessage.text, publicKey);
-        console.log("decrypting time: ", Date.now() - t)
+        console.log(`Decrypted message: ${decryptedText} in ${Date.now() - t} ms. `)
         const message = { ...encryptedMessage, text: decryptedText }
 
         messages.push(message);
