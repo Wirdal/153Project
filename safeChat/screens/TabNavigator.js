@@ -21,7 +21,7 @@ const TabNavigator = createMaterialBottomTabNavigator({
 });
 
 const handleLogout = async ({ navigation }) => {
-  const eThree = await eThreePromise
+  const eThree = await eThreePromise()
   try {
     await eThree.cleanup();
     console.log("logged out")

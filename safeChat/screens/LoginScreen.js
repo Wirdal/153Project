@@ -49,6 +49,7 @@ export default class LoginScreen extends Component {
 
   constructor(props) {
     super(props);
+    this.unsubscribe = null
     // Sets up the begining states of messages
     this.state = {
       email: '',
@@ -65,8 +66,8 @@ export default class LoginScreen extends Component {
     };
   }
 
-  async componentDidMount() {
-    this.eThree = await eThreePromise
+  componentWillUnmount() {
+    if (this.unsubscribe) this.unsubscribe();
   }
 
   // Transitions between login and signup
@@ -121,33 +122,43 @@ export default class LoginScreen extends Component {
   }
 
   // The callback fn for when the button is presssed in login mode
-  login() {
+  async login() {
     // Get the email and password from the state of inputs
     const { email, password } = this.state;
     this.setState({ isLoading: true });
 
     // Send it back to firebase
-    firebase.auth()
-      .signInWithEmailAndPassword(email, password) // Do we need to fetch the key??
-      .then(async (user) => {
-	const hasPrivateKey = await this.eThree.hasLocalPrivateKey();
-	console.log("hasLocalPrivateKey:", hasPrivateKey)
+    firebase.auth().signInWithEmailAndPassword(email, password).catch((error) => {
+      this.setState({ errorMessage: error.message });
+      this.setState({ isLoading: false });
+    });
+
+    this.unsubscribe = firebase.auth().onAuthStateChanged(async (user) => {
+      const eThree = await eThreePromise()
+
+      const hasPrivateKey = await eThree.hasLocalPrivateKey();
+      console.log("hasLocalPrivateKey:", hasPrivateKey)
+      try {
+	await eThree.restorePrivateKey(password);
+	console.log("private key loaded from backup")
+      } catch(err) {
+	console.log(err)
+	console.log("private key not found, registering")
+
 	try {
-	  await this.eThree.restorePrivateKey(password);
-	  console.log("private key loaded from backup")
-	} catch(err) {
-	  console.log(err)
-	  console.log("private key not found, registering")
-	  await this.eThree.register();
-	  await this.eThree.backupPrivateKey(password);
+	  await eThree.register()
 	  console.log("registered with virgil")
+	} catch(err) {
+	  console.log("failed registering, rotating key", err)
+	  await eThree.rotatePrivateKey();
+	  console.log("private key rotated")
 	}
 
-	this.gotoMain(user.uid)
-      }).catch((error) => {
-	this.setState({ errorMessage: error.message });
-	this.setState({ isLoading: false });
-      });
+	await eThree.backupPrivateKey(password);
+      }
+
+      this.gotoMain(user.uid)
+    })
   }
 
   // Callback fn for button when not in login state
@@ -181,11 +192,8 @@ export default class LoginScreen extends Component {
 	  .then(({ user }) => {
 	    usersRef.doc(user.uid).set({ // Write the username to the db
 	      username,
-	    }).then(async () => {
-	      await this.eThree.register()
-	      await this.eThree.backupPrivateKey(password);
-	      console.log("registered with virgil")
-	      this.gotoMain(user.uid)
+	    }).then(() => {
+	      this.login()
 	    }).catch((error) => {
 	      this.setState({
 		errorMessage: error.message,

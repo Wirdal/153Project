@@ -67,7 +67,7 @@ class ChatScreen extends React.Component {
     const appUserDoc = await db.collection('users').doc(appUser).get()
     const peerDoc = await db.collection('users').doc(peerID).get()
 
-    this.eThree = await eThreePromise;
+    this.eThree = await eThreePromise();
     const usersToEncryptTo = [...new Set([appUser, peerID])];
     let publicKeys
     try {

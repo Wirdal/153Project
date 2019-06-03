@@ -24,15 +24,11 @@ async function fetchToken(authToken) {
     return response.json().then(data => data.token);
 };
 
-// Once Firebase user authenticated, we wait for eThree client initialization
-let eThreePromise = new Promise((resolve, reject) => {
-    firebase.auth().onAuthStateChanged(user => {
-        if (user) {
-            const getToken = () => user.getIdToken().then(fetchToken);
-            eThreePromise = EThree.initialize(getToken, { keyEntryStorage })
-            eThreePromise.then(resolve).catch(reject);
-        }
-    });
+let eThreePromise = () => new Promise((resolve, reject) => {
+    const user = firebase.auth().currentUser;
+    const getToken = () => user.getIdToken().then(fetchToken);
+    eThreePromise = EThree.initialize(getToken, { keyEntryStorage })
+    eThreePromise.then(resolve).catch(reject);
 });
 
 export default eThreePromise;
