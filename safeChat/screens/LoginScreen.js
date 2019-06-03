@@ -10,6 +10,7 @@ import {
   UIManager,
   KeyboardAvoidingView,
 } from 'react-native';
+import { StackActions, NavigationActions } from 'react-navigation';
 import { Input, Button, Icon } from 'react-native-elements';
 import firebase from '../config';
 import eThreePromise from '../ethree';
@@ -96,27 +97,53 @@ export default class LoginScreen extends Component {
     return valid;
   }
 
+  async gotoMain(uid) {
+    const appUserDoc = await db.collection('users').doc(uid).get()
+    const appUserName = appUserDoc.data().username
+
+    const { navigation } = this.props;
+    const actions = [];
+    actions.push(
+      NavigationActions.navigate({
+	routeName: 'Main',
+	key: uid,
+	params: {
+	  title: `Hello ${appUserName}`,
+	  userID: uid,
+	},
+      }),
+    );
+    const resetAction = StackActions.reset({
+      index: 0,
+      actions,
+    });
+    navigation.dispatch(resetAction);
+  }
+
   // The callback fn for when the button is presssed in login mode
   login() {
     // Get the email and password from the state of inputs
     const { email, password } = this.state;
-    const { navigation } = this.props;
     this.setState({ isLoading: true });
+
     // Send it back to firebase
     firebase.auth()
       .signInWithEmailAndPassword(email, password) // Do we need to fetch the key??
-      .then(async () => {
+      .then(async (user) => {
 	const hasPrivateKey = await this.eThree.hasLocalPrivateKey();
 	console.log("hasLocalPrivateKey:", hasPrivateKey)
 	try {
 	  await this.eThree.restorePrivateKey(password);
+	  console.log("private key loaded from backup")
 	} catch(err) {
 	  console.log(err)
+	  console.log("private key not found, registering")
 	  await this.eThree.register();
 	  await this.eThree.backupPrivateKey(password);
+	  console.log("registered with virgil")
 	}
 
-	navigation.goBack();
+	this.gotoMain(user.uid)
       }).catch((error) => {
 	this.setState({ errorMessage: error.message });
 	this.setState({ isLoading: false });
@@ -137,9 +164,6 @@ export default class LoginScreen extends Component {
     }
     // Get the collection from our database, the users one to be exact
     const usersRef = db.collection('users');
-    // Does something idk
-    const { navigation } = this.props;
-
 
     // Look through the username fields of the collection, and find the one that matches userinput
     usersRef.where('username', '==', username).get()
@@ -160,7 +184,8 @@ export default class LoginScreen extends Component {
 	    }).then(async () => {
 	      await this.eThree.register()
 	      await this.eThree.backupPrivateKey(password);
-	      navigation.goBack(); // Go back to the a different page
+	      console.log("registered with virgil")
+	      this.gotoMain(user.uid)
 	    }).catch((error) => {
 	      this.setState({
 		errorMessage: error.message,

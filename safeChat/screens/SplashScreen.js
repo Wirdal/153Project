@@ -35,10 +35,15 @@ const styles = StyleSheet.create({
 class SplashScreen extends Component {
   static navigationOptions = { header: null }
 
+  constructor() {
+    super()
+    this.unsubscribe = null
+  }
+
   componentDidMount() {
     const { navigation } = this.props;
 
-    firebase.auth().onAuthStateChanged(async (user) => {
+    this.unsubscribe = firebase.auth().onAuthStateChanged(async (user) => {
       const actions = [];
       if (user) {
         const appUserDoc = await db.collection('users').doc(user.uid).get()
@@ -66,6 +71,10 @@ class SplashScreen extends Component {
       });
       navigation.dispatch(resetAction);
     });
+  }
+
+  componentWillUnmount() {
+    if (this.unsubscribe) this.unsubscribe();
   }
 
   render() {
