@@ -124,6 +124,7 @@ class ChatScreen extends React.Component {
       senderName: appUserName,
       participants: participantsString,
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      readstatus: false, // Sent the message. Currently unread, so, keep it alive. Remove it whem recieved
     });
 
     const appUserObj = { id: appUser, username: appUserName }
