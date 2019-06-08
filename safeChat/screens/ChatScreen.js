@@ -55,15 +55,16 @@ class ChatScreen extends React.Component {
     this.appUser = appUser
     this.peerID = peerID
     this.participantsString = [appUser, peerID].sort().join(',')
-
+    // The chats between the two users
     this.messagesRef = db.collection('messages').where('participants', '==', this.participantsString)
     this.unsubscribe = null
   }
 
   async componentWillMount() {
+    //This is done after selecting a user to message
     const { appUser, peerID } = this;
 
-    // Get the usernames from the database
+    // Get the documents from the database, based on ID
     const appUserDoc = await db.collection('users').doc(appUser).get()
     const peerDoc = await db.collection('users').doc(peerID).get()
 
@@ -71,12 +72,15 @@ class ChatScreen extends React.Component {
     const usersToEncryptTo = [...new Set([appUser, peerID])];
     let publicKeys
     try {
+      // Get the public keys
       publicKeys = await this.eThree.lookupPublicKeys(usersToEncryptTo);
     } catch(err) {
+      // Throw an error if Virgil fails
       console.error(err.lookupResult)
     }
 
     this.setState({
+      //Set the username for both the sender and reciever in the state
       appUserName: appUserDoc.data().username,
       peerUserName: peerDoc.data().username,
       publicKeys,
@@ -124,7 +128,7 @@ class ChatScreen extends React.Component {
       senderName: appUserName,
       participants: participantsString,
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-      readstatus: false, // Sent the message. Currently unread, so, keep it alive. Remove it whem recieved
+      read: false, // Sent the message. Currently unread, so, keep it alive. Remove it whem recieved? Or just dont tell the user we have it
     });
 
     const appUserObj = { id: appUser, username: appUserName }
@@ -138,6 +142,7 @@ class ChatScreen extends React.Component {
   }
 
   async onMessagesUpdate(querySnapshot) {
+    // The messages we will recieve
     const encryptedMessages = [];
     querySnapshot.docChanges().forEach(function(change) {
       if (change.type === "added") {
