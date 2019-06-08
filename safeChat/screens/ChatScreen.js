@@ -55,19 +55,20 @@ class ChatScreen extends React.Component {
     this.appUser = appUser
     this.peerID = peerID
     this.participantsString = [appUser, peerID].sort().join(',')
-    // The chats between the two users
+    // The chats between the two users. Info is known because of the peer is added to the state?
     this.messagesRef = db.collection('messages').where('participants', '==', this.participantsString)
     this.unsubscribe = null
   }
 
+  //This is done after selecting a user to message
   async componentWillMount() {
-    //This is done after selecting a user to message
     const { appUser, peerID } = this;
 
     // Get the documents from the database, based on ID
     const appUserDoc = await db.collection('users').doc(appUser).get()
     const peerDoc = await db.collection('users').doc(peerID).get()
 
+    // Construct the Virgil callback
     this.eThree = await eThreePromise();
     const usersToEncryptTo = [...new Set([appUser, peerID])];
     let publicKeys
@@ -133,6 +134,7 @@ class ChatScreen extends React.Component {
 
     const appUserObj = { id: appUser, username: appUserName }
     const peerUserObj = { id: peerID, username: peerUserName }
+    // Create the chat. Will concat onto existing ones otherwise
     this.createChat(appUserObj, peerUserObj)
     this.createChat(peerUserObj, appUserObj)
   }
@@ -147,7 +149,7 @@ class ChatScreen extends React.Component {
     querySnapshot.docChanges().forEach(function(change) {
       if (change.type === "added") {
         let {
-          senderID, senderName, message, timestamp
+          senderID, senderName, message, timestamp, read,
         } = change.doc.data();
 
         if (!timestamp) {
@@ -157,6 +159,7 @@ class ChatScreen extends React.Component {
         }
 
         encryptedMessages.push({
+          read: read,
           _id: change.doc.id,
           text: message,
           createdAt: timestamp,
@@ -183,8 +186,14 @@ class ChatScreen extends React.Component {
         const decryptedText = await eThree.decrypt(encryptedMessage.text, publicKey);
         console.log(`Decrypted message: ${decryptedText} in ${Date.now() - t} ms. `)
         const message = { ...encryptedMessage, text: decryptedText }
-
-        messages.push(message);
+        if (!encryptedMessage.read){
+          messages.push(message);
+        }
+        else { // Tell the database that the message is read.
+          db.collection("messages").doc(encryptedMessage._id).update({
+            read: true
+          })
+        }
       } catch (e) {
         console.log(`Could not decrypt message from ${encryptedMessage.user._id}: ${e}`)
       }
