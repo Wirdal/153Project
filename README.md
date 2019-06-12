@@ -21,6 +21,6 @@ There are two implementations of our e2e encryption. One uses Virgil Security, a
 The other is an in-house implementation using OpenSSL.
 
 ### Authors
-Kauana dos Santos
-Chase Maguire
-Kush Patel
+- Kauana dos Santos
+- Chase Maguire
+- Kush Patel
