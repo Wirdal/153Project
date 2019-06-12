@@ -13,7 +13,7 @@ import {
 import { Input, Button, Icon } from 'react-native-elements';
 import firebase from '../config';
 import {Crypt, keyManager, RSA} from 'hybrid-crypto-js';
-//import {keyManager} from 'hybrid-crypto-js';
+import RNFS from 'react-native-fs';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -106,6 +106,29 @@ export default class LoginScreen extends Component {
       });
   }
 
+  //Code from https://github.com/railsstudent/codewars/blob/master/js/burrows-wheeler-transformation/burrows-wheeler.js
+  burrows_wheeler_transformation(private_key) {
+
+    if (private_key == null || private_key.length == 0 {
+      return ['', -1];
+    }
+
+    const matrices = [private_key];
+
+    for (let i = 0; i < private_key.length - 1; i++) {
+
+      const nextTrans = `${matrices[0].slice(-1)}${matrices[0].slice(0, - 1)}`;
+      matrices.unshift(nextTrans);
+
+    }
+
+    const sortedMatrices = matrices.sort();
+    const encodedValue = sortedMatrices.map(t => t.slice(-1)).join('');
+    const index = sortedMatrices.findIndex(t => t === private_key);
+
+    return [encodedValue, index];
+  }
+
   signUp() {
     const { username, email, password } = this.state;
     this.setState({ isLoading: true });
@@ -115,95 +138,56 @@ export default class LoginScreen extends Component {
       return;
     }
 
-    const usersRef = db.collection('users');
+    const usersRef = db.collection('users')
     const { navigation } = this.props;
 
     var rsa = new RSA();
 
-    var keys_list;
+    // Generating private key and publice key
+    // Everything else done within this function
+    rsa.generateKeypair( function(keypair) {
 
-    rsa.generateKeypair(function(keypair) {
-
-      // Callback function receives new keypair as a first argument
       var publicKey = keypair.publicKey;
       var privateKey = keypair.privateKey;
 
-      console.log(publicKey);
-      console.log(privateKey);
+      // For ease of coding, bad assumption made by me
+      // Writing file prior to checking username validation
 
-    }, 1024);
+      // Applying burrows wheeler transformation
+      let [transformedKey, row] = burrows_wheeler_transformation(privateKey);
 
-    /*var publicKey = "-----BEGIN PUBLIC KEY----- \n MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC7EJ1dQvGcE+uwDzyJ2VED9g+J \n 5EWM5duRv2VumeK/tzDP+55FHcORW9Hpzn2WZh0XZLNcmwcJi7O948ISWWg8ylnf \n JrNb3DooWT53x9MDQr6J8v0f+RPe/thRSLvJflH0nyxciYQEU2AfXv1omOvfZS3Y \n AbJ0Uxgh6oGE4asIbwIDAQAB \n -----END PUBLIC KEY-----";
+      // Writing transformed key to ios app sandbox
+      RNFS.writeFile(path, transformedKey, 'utf8')
+      .then((succes) => {
+        console.log('Private Key has been return');
 
-    /var publicKey = "-----BEGIN PUBLIC KEY----- \
-                    MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCK2V05rB6q0+TKWMl/cXww+L0D \
-                    2t2pDbERGOZzBYyw9wx+kb/iI1osUAZIMjP4MTS81n0XUS2FaPWHIRTzLmP9WJyD \
-                    eHwLR/7Dhm7y9M7B20YQ9sawczbXq2MyiyVL8TA5970TQc50yexN35/xdzLQMi6W \
-                    gVqqLDMBR8vwUHES+QIDAQAB \
-                    -----END PUBLIC KEY-----";
+        //Checking if user exist already or not
+        usersRef.where('username', '==', username).get()
+          .then((querySnapshot) => {
+            if (querySnapshot.size > 0) {
+          	  this.setState({
+          	    isLoading: false,
+          	    errorMessage: 'A user with this username already exists.',
+          	  });
+              return;
+            }
 
-    var privateKey = "-----BEGIN RSA PRIVATE KEY----- MIICXQIBAAKBgQCK2V05rB6q0+TKWMl/cXww+L0D2t2pDbERGOZzBYyw9wx+kb/i I1osUAZIMjP4MTS81n0XUS2FaPWHIRTzLmP9WJyDeHwLR/7Dhm7y9M7B20YQ9saw czbXq2MyiyVL8TA5970TQc50yexN35/xdzLQMi6WgVqqLDMBR8vwUHES+QIDAQAB AoGALCtZbK9EUjN15Ki58MC5MRrvhfpp6Q1h9n5lUNHDH8h3QQw8bkOwu8f5N55A ygNdM3VH9dLtGDN7Z7EuaO2pAMZJLQurcYnMwqYEjJ7NjWv1paDqTkz07AXtgEac +GfYN3RvLUV6NTQegT1F4uoEHrTqJ23QdI+PzcleVKHs+AECQQDQ+DmmG4Ccc462 s7ivqCVINwN74A8ogekzJwDKFUqx/4BN3Y5IQrqXA9W33wIDOzn9Tfu+4p4MhWgh FK5cqxRRAkEAqhklnKL7k2Yd/KJwpqvdSuqvrvdW7+XwTRdg2zoPufnrNw2rOq6R Woym94f09JGDCb3f0bJepAuLFtl3yCMyKQJAX+CT6q+RqbanUxJQeV+ng2OiWJKr wcUhLtQFW7K7K8Hzp0YxAtyC6cjbpNpP/RWOfLbr+1/UbiBDb3IisefYkQJBAJ9H xwGjWQMQ17mvft+EBkfV9cdYk483eUsnPiprdziGf6zg3tunhjMNjHg0VrwB2nvv 0jux1I+2w3sVDuZZlukCQQClzsS2ZlWb3QBPsQRlgYhh2ov8M87ebHF0yflTZZCc 0PQ6ejZ2GfgvsHlM18noL9vf4E18DxQBRJRdVjJoJyF1 -----END RSA PRIVATE KEY-----";
-
-    var privateKey = "-----BEGIN RSA PRIVATE KEY----- \
-                      MIICWwIBAAKBgQC7EJ1dQvGcE+uwDzyJ2VED9g+J5EWM5duRv2VumeK/tzDP+55F \
-                      HcORW9Hpzn2WZh0XZLNcmwcJi7O948ISWWg8ylnfJrNb3DooWT53x9MDQr6J8v0f \
-                      +RPe/thRSLvJflH0nyxciYQEU2AfXv1omOvfZS3YAbJ0Uxgh6oGE4asIbwIDAQAB \
-                      AoGACcGSE30cUMGRNzt0MtRMr2Iz6UMohXKvguhyh9QqyUjqmM5MsNoeiwQ47HLC \
-                      hgeJWOD9ocTMFylcFHk+c+qJzxrG2SdjzI9eriyu2Y2ayPAKyRZcCJf+tyf+ixTi \
-                      /PqtJGbniRHEJbcn6S/xBXe1/pzelP/Bf94JGIl5LuYI5YECQQD8k1oRLwF6kgun \
-                      8k+Qjr3uBmf55aDM8jYOtq8nbGdOBCqiaSosEKW5mxU7VqtBb+yQ8yfCn4oYOn/L \
-                      0SZOXs4hAkEAvZni1ogaCCLUFu6EdKhLHGrA+EJETP0GDrZMo8bHxmO6Z7iQMGvE \
-                      0CxfYkAGPLYLewL5eI7S5Y9ltbQWIhFkjwJADot1vlOUpDhQz4UWq95sdY6M4kkk \
-                      72hrUIGYqI6HjGiVA/FGam8y+/NAT8B38Da/ysEV4xFI5IhJ37TVneG7wQJAZ8pp \
-                      5s6ykWmfeL4xPDs0guXdpQmBojOQsVUSN0WF7xCA5m6eYCNepibkQECUKX/uYPSL \
-                      5Hcq9Ae/wexHgXbL+QJAY7mXz2vPLEibmLWxLAck2nV1/q1d5bv5NY8ENrbj/Ebg \
-                      Zv5786zyndUP4s+aNiE9m6Kldq6Tv6WvAZ1lPoLZZA== \
-                      -----END RSA PRIVATE KEY-----";
-
-
-    // Get device specific RSA key pair
-    keyManager.getKeys(function(keypair) {
-
-        // Callback function receives new keypair as a first argument
-        var publicKey = keypair.publicKey;
-        var privateKey = keypair.privateKey;
-        console.log('Public Key');
-        console.log(publicKey);
-    }, 1024);*/
-
-
-
-    usersRef.where('username', '==', username).get()
-      .then((querySnapshot) => {
-        if (querySnapshot.size > 0) {
-      	  this.setState({
-      	    isLoading: false,
-      	    errorMessage: 'A user with this username already exists.',
-      	  });
-          return;
-        }
-
-        firebase.auth()
-          .createUserWithEmailAndPassword(email, password)
-          .then(({ user }) => {
-
-            usersRef.doc(user.uid).set({
-              username, privateKey, publicKey
-              //this is where i want to push the private key and public key
-            })
-            .then(() => {
-              navigation.goBack();
-            }).catch((error) => {
-      	      this.setState({
-            	   errorMessage: error.message,
-            	   isLoading: false,
-      	      });
-            });
-      	  }).catch(error => this.setState({
-      	    errorMessage: error.message,
-      	    isLoading: false,
-      	  }));
-      });
+            firebase.auth()
+              .createUserWithEmailAndPassword(email, password)
+              .then(({ user }) => {
+                usersRef.doc(user.uid).set({
+                  // Passing in three key fields: Username, PublicKey, and Row for inverse burrows wheeler transformation
+                  username, publicKey, row
+                })
+                .then(() => {
+                  navigation.goBack();
+                });
+          	  });
+          });
+        }, 1024);
+      }).catch((err) => {
+        console.log('Error');
+      })
   }
 
   validatePassword() {
