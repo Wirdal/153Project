@@ -50,7 +50,7 @@ Moreover, our goal was that only the user should ever see the messages that were
 
 - Our cloud functions which are used for the full-text search are located in `safeChat/functions/index.js` and these functions are deployed using Google Cloud and run 24/7.
 
-- Lastly, in `safeChat/App.js' we have the logic that glues everything together. There we create a stack of screens in the order we want, load necessary fonts, etc.
+- Lastly, in `safeChat/App.js` we have the logic that glues everything together. There we create a stack of screens in the order we want, load necessary fonts, etc.
 
 ## Implementations
 There are two implementations of our e2e encryption. One uses Virgil Security, a free tool for developers for key creation, signing, encryption/decryption, etc.
