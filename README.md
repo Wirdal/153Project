@@ -5,6 +5,8 @@ This project was created for the ECS153 (computer security) class at UC Davis/Sp
 
 ## App Demo (running on Android)
 
+<img src="safeChat/assets/images/appdemo.gif" width="300">
+
 ## Installing/Running the App
 
 #### Method 1 (run the server on the command line):
