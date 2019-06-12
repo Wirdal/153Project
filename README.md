@@ -56,6 +56,13 @@ Moreover, our goal was that only the user should ever see the messages that were
 There are two implementations of our e2e encryption. One uses Virgil Security, a free tool for developers for key creation, signing, encryption/decryption, etc.
 The other is an in-house implementation using OpenSSL.
 
+### Virgil Security
+There is a tag for the Virgil Security Implementation.
+It was a very light workload. A callback function had to be set up for the front end and our back end, which just communicates with the Virgil Cloud as detailed in the presentation. They handle everything, other than account creation.
+
+### OpenSSL
+(Kush writes here)
+
 ### Authors
 - Kauana dos Santos
 - Chase Maguire
